@@ -80,7 +80,9 @@ static unique_ptr<LocalTableFunctionState> TableScanInitLocal(ExecutionContext &
 		result->all_columns.Initialize(context.client, tsgs.scanned_types);
 	}
 
-	result->scan_state.options.force_fetch_row = ClientConfig::GetConfig(context.client).force_fetch_row;
+	auto &client_config = ClientConfig::GetConfig(context.client);
+	result->scan_state.options.force_fetch_row = client_config.force_fetch_row;
+	result->scan_state.options.disable_sketch = client_config.disable_sketch;
 
 	return std::move(result);
 }
@@ -123,7 +125,9 @@ static void TableScanFunc(ClientContext &context, TableFunctionInput &data_p, Da
 	auto &transaction = DuckTransaction::Get(context, bind_data.table.catalog);
 	auto &storage = bind_data.table.GetStorage();
 
-	state.scan_state.options.force_fetch_row = ClientConfig::GetConfig(context).force_fetch_row;
+	auto &client_config = ClientConfig::GetConfig(context);
+	state.scan_state.options.force_fetch_row = client_config.force_fetch_row;
+	state.scan_state.options.disable_sketch = client_config.disable_sketch;
 	do {
 		if (bind_data.is_create_index) {
 			storage.CreateIndexScan(state.scan_state, output,

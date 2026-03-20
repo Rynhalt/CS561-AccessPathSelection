@@ -145,6 +145,8 @@ private:
 struct TableScanOptions {
 	//! Test config that forces fetching rows one by one instead of regular scans
 	bool force_fetch_row = false;
+	//! Disable column sketch predicate pruning
+	bool disable_sketch = false;
 };
 
 class TableScanState {

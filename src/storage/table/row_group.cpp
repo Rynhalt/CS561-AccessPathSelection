@@ -492,6 +492,7 @@ void RowGroup::TemplatedScan(TransactionData transaction, CollectionScanState &s
 	auto table_filters = state.GetFilters();
 	const auto &column_ids = state.GetColumnIds();
 	auto adaptive_filter = state.GetAdaptiveFilter();
+	auto &scan_options = state.GetOptions();
 	while (true) {
 		if (state.vector_index * STANDARD_VECTOR_SIZE >= state.max_row_group_row) {
 			// exceeded the amount of rows to scan
@@ -500,14 +501,16 @@ void RowGroup::TemplatedScan(TransactionData transaction, CollectionScanState &s
 		idx_t current_row = state.vector_index * STANDARD_VECTOR_SIZE;
 		auto max_count = MinValue<idx_t>(STANDARD_VECTOR_SIZE, state.max_row_group_row - current_row);
 
-		bool can_sketch = true;
+		bool can_sketch = !scan_options.disable_sketch;
 		//! first check the zonemap if we have to scan this partition
-		for (idx_t i = 0; i < column_ids.size(); i++) {
-			const auto &column = column_ids[i];
-			auto &col_data = GetColumn(column);
-			if(!col_data.is_sketched) {
-				can_sketch = false;
-				break;
+		if (can_sketch) {
+			for (idx_t i = 0; i < column_ids.size(); i++) {
+				const auto &column = column_ids[i];
+				auto &col_data = GetColumn(column);
+				if (!col_data.is_sketched) {
+					can_sketch = false;
+					break;
+				}
 			}
 		}
 		bool check_result;

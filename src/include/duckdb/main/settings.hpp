@@ -130,6 +130,16 @@ struct PreferRangeJoins {
 	static Value GetSetting(const ClientContext &context);
 };
 
+struct DisableSketchSetting {
+	static constexpr const char *Name = "disable_sketch";
+	static constexpr const char *Description =
+	    "Disable column-sketch-based predicate pruning for table scans (forces full scan)";
+	static constexpr const LogicalTypeId InputType = LogicalTypeId::BOOLEAN;
+	static void SetLocal(ClientContext &context, const Value &parameter);
+	static void ResetLocal(ClientContext &context);
+	static Value GetSetting(const ClientContext &context);
+};
+
 struct DebugWindowMode {
 	static constexpr const char *Name = "debug_window_mode";
 	static constexpr const char *Description = "DEBUG SETTING: switch window mode to use";

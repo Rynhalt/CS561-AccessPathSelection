@@ -239,6 +239,21 @@ Value PreferRangeJoins::GetSetting(const ClientContext &context) {
 }
 
 //===--------------------------------------------------------------------===//
+// Disable Sketch
+//===--------------------------------------------------------------------===//
+void DisableSketchSetting::ResetLocal(ClientContext &context) {
+	ClientConfig::GetConfig(context).disable_sketch = ClientConfig().disable_sketch;
+}
+
+void DisableSketchSetting::SetLocal(ClientContext &context, const Value &input) {
+	ClientConfig::GetConfig(context).disable_sketch = input.GetValue<bool>();
+}
+
+Value DisableSketchSetting::GetSetting(const ClientContext &context) {
+	return Value::BOOLEAN(ClientConfig::GetConfig(context).disable_sketch);
+}
+
+//===--------------------------------------------------------------------===//
 // Default Collation
 //===--------------------------------------------------------------------===//
 void DefaultCollationSetting::SetGlobal(DatabaseInstance *db, DBConfig &config, const Value &input) {

@@ -176,6 +176,10 @@ bool RowGroup::InitializeScanWithOffset(CollectionScanState &state, idx_t vector
 	auto filters = state.GetFilters();
 	if (filters) {
 		if (!CheckZonemap(*filters, column_ids)) {
+			auto metrics = state.GetMetrics();
+			if (metrics && vector_offset == 0) {
+				metrics->row_groups_pruned_by_zonemap++;
+			}
 			return false;
 		}
 	}
@@ -208,6 +212,10 @@ bool RowGroup::InitializeScan(CollectionScanState &state) {
 	auto filters = state.GetFilters();
 	if (filters) {
 		if (!CheckZonemap(*filters, column_ids)) {
+			auto metrics = state.GetMetrics();
+			if (metrics) {
+				metrics->row_groups_pruned_by_zonemap++;
+			}
 			return false;
 		}
 	}
@@ -416,6 +424,10 @@ bool RowGroup::CheckZonemapSegments(CollectionScanState &state) {
 		const auto &base_column_idx = column_ids[column_idx];
 		bool read_segment = GetColumn(base_column_idx).CheckZonemap(state.column_scans[column_idx], *entry.second);
 		if (!read_segment) {
+			auto metrics = state.GetMetrics();
+			if (metrics) {
+				metrics->segments_pruned_by_zonemap++;
+			}
 
 			idx_t target_row = GetFilterScanCount(state.column_scans[column_idx], *entry.second);
 			if (target_row >= state.max_row) {
@@ -456,6 +468,10 @@ bool RowGroup::CheckSketchSegments(CollectionScanState &state) {
 		const auto &base_column_idx = column_ids[column_idx];
 		bool read_segment = GetColumn(base_column_idx).CheckSketch(state.column_scans[column_idx], *entry.second, state.vector_index);
 		if (!read_segment) {
+			auto metrics = state.GetMetrics();
+			if (metrics) {
+				metrics->segments_pruned_by_sketch++;
+			}
 			
 			idx_t target_row = GetFilterScanCount(state.column_scans[column_idx], *entry.second);
 			if (target_row >= state.max_row) {
@@ -541,6 +557,10 @@ void RowGroup::TemplatedScan(TransactionData transaction, CollectionScanState &s
 			}
 		} else {
 			count = max_count;
+		}
+		auto metrics = state.GetMetrics();
+		if (metrics) {
+			metrics->vectors_processed++;
 		}
 		if (count == max_count && !table_filters) {
 			// scan all vectors completely: full scan without deletions or table filters

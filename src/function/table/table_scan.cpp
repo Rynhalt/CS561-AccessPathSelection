@@ -3,6 +3,7 @@
 #include "duckdb/catalog/catalog_entry/duck_table_entry.hpp"
 #include "duckdb/catalog/dependency_list.hpp"
 #include "duckdb/common/mutex.hpp"
+#include "duckdb/common/string_util.hpp"
 #include "duckdb/common/serializer/deserializer.hpp"
 #include "duckdb/common/serializer/serializer.hpp"
 #include "duckdb/execution/index/art/art.hpp"
@@ -68,6 +69,7 @@ static unique_ptr<LocalTableFunctionState> TableScanInitLocal(ExecutionContext &
                                                               GlobalTableFunctionState *gstate) {
 	auto result = make_uniq<TableScanLocalState>();
 	auto &bind_data = input.bind_data->Cast<TableScanBindData>();
+	result->scan_state.scan_metrics = bind_data.scan_metrics;
 	vector<column_t> column_ids = input.column_ids;
 	for (auto &col : column_ids) {
 		auto storage_idx = GetStorageIndex(bind_data.table, col);
@@ -353,6 +355,19 @@ void TableScanPushdownComplexFilter(ClientContext &context, LogicalGet &get, Fun
 string TableScanToString(const FunctionData *bind_data_p) {
 	auto &bind_data = bind_data_p->Cast<TableScanBindData>();
 	string result = bind_data.table.name;
+	if (bind_data.scan_metrics) {
+		result += "\n";
+		result += StringUtil::Format("row_groups_pruned_by_zonemap: %llu",
+		                             bind_data.scan_metrics->row_groups_pruned_by_zonemap.load());
+		result += "\n";
+		result += StringUtil::Format("segments_pruned_by_zonemap: %llu",
+		                             bind_data.scan_metrics->segments_pruned_by_zonemap.load());
+		result += "\n";
+		result += StringUtil::Format("segments_pruned_by_sketch: %llu",
+		                             bind_data.scan_metrics->segments_pruned_by_sketch.load());
+		result += "\n";
+		result += StringUtil::Format("vectors_processed: %llu", bind_data.scan_metrics->vectors_processed.load());
+	}
 	return result;
 }
 

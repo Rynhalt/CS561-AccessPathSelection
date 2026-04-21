@@ -76,6 +76,7 @@ public:
 		string name;
 		string extra_info;
 		OperatorInformation info;
+		optional_ptr<const PhysicalOperator> op;
 		vector<unique_ptr<TreeNode>> children;
 		idx_t depth = 0;
 	};
@@ -87,6 +88,7 @@ public:
 
 private:
 	unique_ptr<TreeNode> CreateTree(const PhysicalOperator &root, idx_t depth = 0);
+	void RefreshExtraInfo(TreeNode &node);
 	void Render(const TreeNode &node, std::ostream &str) const;
 
 public:

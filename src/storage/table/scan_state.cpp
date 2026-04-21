@@ -31,6 +31,10 @@ AdaptiveFilter *TableScanState::GetAdaptiveFilter() {
 	return adaptive_filter.get();
 }
 
+shared_ptr<TableScanMetrics> TableScanState::GetMetrics() {
+	return scan_metrics;
+}
+
 void ColumnScanState::NextInternal(idx_t count) {
 	if (!current) {
 		//! There is no column segment
@@ -69,6 +73,10 @@ AdaptiveFilter *CollectionScanState::GetAdaptiveFilter() {
 
 TableScanOptions &CollectionScanState::GetOptions() {
 	return parent.options;
+}
+
+shared_ptr<TableScanMetrics> CollectionScanState::GetMetrics() {
+	return parent.GetMetrics();
 }
 
 ParallelCollectionScanState::ParallelCollectionScanState()

@@ -122,6 +122,15 @@ void QueryProfiler::Finalize(TreeNode &node) {
 	}
 }
 
+void QueryProfiler::RefreshExtraInfo(TreeNode &node) {
+	if (node.op) {
+		node.extra_info = node.op->ParamsToString();
+	}
+	for (auto &child : node.children) {
+		RefreshExtraInfo(*child);
+	}
+}
+
 void QueryProfiler::StartExplainAnalyze() {
 	this->is_explain_analyze = true;
 }
@@ -134,6 +143,7 @@ void QueryProfiler::EndQuery() {
 
 	main_query.End();
 	if (root) {
+		RefreshExtraInfo(*root);
 		Finalize(*root);
 	}
 	this->running = false;
@@ -432,6 +442,7 @@ void QueryProfiler::QueryTreeToStream(std::ostream &ss) const {
 	}
 	// render the main operator tree
 	if (root) {
+		const_cast<QueryProfiler *>(this)->RefreshExtraInfo(*root);
 		Render(*root, ss);
 	}
 }
@@ -501,6 +512,7 @@ string QueryProfiler::ToJSON() const {
 	if (!root) {
 		return "{ \"result\": \"error\" }\n";
 	}
+	const_cast<QueryProfiler *>(this)->RefreshExtraInfo(*root);
 	std::stringstream ss;
 	ss << "{\n";
 	ss << "   \"name\":  \"Query\", \n";
@@ -550,6 +562,7 @@ unique_ptr<QueryProfiler::TreeNode> QueryProfiler::CreateTree(const PhysicalOper
 	node->type = root.type;
 	node->name = root.GetName();
 	node->extra_info = root.ParamsToString();
+	node->op = root;
 	node->depth = depth;
 	tree_map.insert(make_pair(reference<const PhysicalOperator>(root), reference<QueryProfiler::TreeNode>(*node)));
 	auto children = root.GetChildren();

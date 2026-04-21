@@ -32,6 +32,7 @@ class ColumnData;
 class DuckTransaction;
 class RowGroupSegmentTree;
 struct TableScanOptions;
+struct TableScanMetrics;
 
 struct SegmentScanState {
 	virtual ~SegmentScanState() {
@@ -134,6 +135,7 @@ public:
 	TableFilterSet *GetFilters();
 	AdaptiveFilter *GetAdaptiveFilter();
 	TableScanOptions &GetOptions();
+	shared_ptr<TableScanMetrics> GetMetrics();
 	bool Scan(DuckTransaction &transaction, DataChunk &result);
 	bool ScanCommitted(DataChunk &result, TableScanType type);
 	bool ScanCommitted(DataChunk &result, SegmentLock &l, TableScanType type);
@@ -149,6 +151,18 @@ struct TableScanOptions {
 	bool disable_sketch = false;
 };
 
+struct TableScanMetrics {
+	atomic<idx_t> row_groups_pruned_by_zonemap;
+	atomic<idx_t> segments_pruned_by_zonemap;
+	atomic<idx_t> segments_pruned_by_sketch;
+	atomic<idx_t> vectors_processed;
+
+	TableScanMetrics()
+	    : row_groups_pruned_by_zonemap(0), segments_pruned_by_zonemap(0), segments_pruned_by_sketch(0),
+	      vectors_processed(0) {
+	}
+};
+
 class TableScanState {
 public:
 	TableScanState() : table_state(*this), local_state(*this), table_filters(nullptr) {};
@@ -159,6 +173,8 @@ public:
 	CollectionScanState local_state;
 	//! Options for scanning
 	TableScanOptions options;
+	//! Optional metrics collected while scanning
+	shared_ptr<TableScanMetrics> scan_metrics;
 	//! Shared lock over the checkpoint to prevent checkpoints while reading
 	unique_ptr<StorageLockKey> checkpoint_lock;
 
@@ -168,6 +184,7 @@ public:
 	const vector<storage_t> &GetColumnIds();
 	TableFilterSet *GetFilters();
 	AdaptiveFilter *GetAdaptiveFilter();
+	shared_ptr<TableScanMetrics> GetMetrics();
 
 private:
 	//! The column identifiers of the scan

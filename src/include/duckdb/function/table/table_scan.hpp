@@ -11,13 +11,15 @@
 #include "duckdb/function/table_function.hpp"
 #include "duckdb/common/atomic.hpp"
 #include "duckdb/function/built_in_functions.hpp"
+#include "duckdb/storage/table/scan_state.hpp"
 
 namespace duckdb {
 class DuckTableEntry;
 class TableCatalogEntry;
 
 struct TableScanBindData : public TableFunctionData {
-	explicit TableScanBindData(DuckTableEntry &table) : table(table), is_index_scan(false), is_create_index(false) {
+	explicit TableScanBindData(DuckTableEntry &table)
+	    : table(table), is_index_scan(false), is_create_index(false), scan_metrics(make_shared_ptr<TableScanMetrics>()) {
 	}
 
 	//! The table to scan
@@ -29,6 +31,8 @@ struct TableScanBindData : public TableFunctionData {
 	bool is_create_index;
 	//! The row ids to fetch (in case of an index scan)
 	vector<row_t> result_ids;
+	//! Per-query scan metrics for this table scan operator
+	shared_ptr<TableScanMetrics> scan_metrics;
 
 public:
 	bool Equals(const FunctionData &other_p) const override {

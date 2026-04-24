@@ -254,6 +254,21 @@ Value DisableSketchSetting::GetSetting(const ClientContext &context) {
 }
 
 //===--------------------------------------------------------------------===//
+// Disable Zonemap
+//===--------------------------------------------------------------------===//
+void DisableZonemapSetting::ResetLocal(ClientContext &context) {
+	ClientConfig::GetConfig(context).disable_zonemap = ClientConfig().disable_zonemap;
+}
+
+void DisableZonemapSetting::SetLocal(ClientContext &context, const Value &input) {
+	ClientConfig::GetConfig(context).disable_zonemap = input.GetValue<bool>();
+}
+
+Value DisableZonemapSetting::GetSetting(const ClientContext &context) {
+	return Value::BOOLEAN(ClientConfig::GetConfig(context).disable_zonemap);
+}
+
+//===--------------------------------------------------------------------===//
 // Default Collation
 //===--------------------------------------------------------------------===//
 void DefaultCollationSetting::SetGlobal(DatabaseInstance *db, DBConfig &config, const Value &input) {

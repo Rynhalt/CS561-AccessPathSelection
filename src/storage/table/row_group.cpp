@@ -366,7 +366,10 @@ void RowGroup::NextVector(CollectionScanState &state) {
 	}
 }
 
-bool RowGroup::CheckZonemap(TableFilterSet &filters, const vector<storage_t> &column_ids) {
+bool RowGroup::CheckZonemap(TableFilterSet &filters, const vector<storage_t> &column_ids, TableScanOptions &options) {
+	if (options.disable_zonemap) {
+		return true;
+	}
 	for (auto &entry : filters.filters) {
 		auto column_index = entry.first;
 		auto &filter = entry.second;
@@ -413,6 +416,9 @@ static idx_t GetFilterScanCount(ColumnScanState &state, TableFilter &filter) {
 }
 
 bool RowGroup::CheckZonemapSegments(CollectionScanState &state) {
+	if (state.GetOptions().disable_zonemap) {
+	return true;
+	}
 	auto &column_ids = state.GetColumnIds();
 	auto filters = state.GetFilters();
 	if (!filters) {

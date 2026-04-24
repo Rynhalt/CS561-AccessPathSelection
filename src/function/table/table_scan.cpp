@@ -85,7 +85,7 @@ static unique_ptr<LocalTableFunctionState> TableScanInitLocal(ExecutionContext &
 	auto &client_config = ClientConfig::GetConfig(context.client);
 	result->scan_state.options.force_fetch_row = client_config.force_fetch_row;
 	result->scan_state.options.disable_sketch = client_config.disable_sketch;
-
+	result->scan_state.options.disable_zonemap = client_config.disable_zonemap;
 	return std::move(result);
 }
 

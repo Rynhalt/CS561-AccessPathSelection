@@ -140,6 +140,15 @@ struct DisableSketchSetting {
 	static Value GetSetting(const ClientContext &context);
 };
 
+struct DisableZonemapSetting {
+	static constexpr const char *Name = "disable_zonemap";
+	static constexpr const char *Description = "Disable zonemap-based pruning for table scans";
+	static constexpr const LogicalTypeId InputType = LogicalTypeId::BOOLEAN;
+	static void SetLocal(ClientContext &context, const Value &parameter);
+	static void ResetLocal(ClientContext &context);
+	static Value GetSetting(const ClientContext &context);
+};
+
 struct DebugWindowMode {
 	static constexpr const char *Name = "debug_window_mode";
 	static constexpr const char *Description = "DEBUG SETTING: switch window mode to use";

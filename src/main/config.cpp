@@ -65,6 +65,7 @@ static const ConfigurationOption internal_options[] = {
     DUCKDB_LOCAL(DebugAsOfIEJoin),
     DUCKDB_LOCAL(PreferRangeJoins),
     DUCKDB_LOCAL(DisableSketchSetting),
+	DUCKDB_LOCAL(DisableZonemapSetting),
     DUCKDB_GLOBAL(DebugWindowMode),
     DUCKDB_GLOBAL_LOCAL(DefaultCollationSetting),
     DUCKDB_GLOBAL(DefaultOrderSetting),

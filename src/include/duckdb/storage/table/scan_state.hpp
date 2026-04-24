@@ -149,6 +149,8 @@ struct TableScanOptions {
 	bool force_fetch_row = false;
 	//! Disable column sketch predicate pruning
 	bool disable_sketch = false;
+	//! Disable zonemap predicate pruning
+	bool disable_zonemap = false;
 };
 
 struct TableScanMetrics {

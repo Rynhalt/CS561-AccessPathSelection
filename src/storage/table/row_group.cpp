@@ -175,7 +175,7 @@ bool RowGroup::InitializeScanWithOffset(CollectionScanState &state, idx_t vector
 	auto &column_ids = state.GetColumnIds();
 	auto filters = state.GetFilters();
 	if (filters) {
-		if (!CheckZonemap(*filters, column_ids)) {
+		if (!CheckZonemap(*filters, column_ids, state.GetOptions())) {
 			auto metrics = state.GetMetrics();
 			if (metrics && vector_offset == 0) {
 				metrics->row_groups_pruned_by_zonemap++;
@@ -211,7 +211,7 @@ bool RowGroup::InitializeScan(CollectionScanState &state) {
 	auto &column_ids = state.GetColumnIds();
 	auto filters = state.GetFilters();
 	if (filters) {
-		if (!CheckZonemap(*filters, column_ids)) {
+		if (!CheckZonemap(*filters, column_ids, state.GetOptions())) {
 			auto metrics = state.GetMetrics();
 			if (metrics) {
 				metrics->row_groups_pruned_by_zonemap++;

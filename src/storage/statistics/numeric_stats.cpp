@@ -5,8 +5,43 @@
 
 #include "duckdb/common/serializer/serializer.hpp"
 #include "duckdb/common/serializer/deserializer.hpp"
+#include <cstring>
 
 namespace duckdb {
+
+static uint64_t EncodeOrderedDouble(double value) {
+	uint64_t bits;
+	memcpy(&bits, &value, sizeof(bits));
+	if (bits & (1ULL << 63)) {
+		return ~bits;
+	}
+	return bits ^ (1ULL << 63);
+}
+
+template <class T>
+static T GetSketchConstant(const Value &constant_value) {
+	if constexpr (std::is_same_v<T, uint32_t>) {
+		switch (constant_value.type().InternalType()) {
+		case PhysicalType::INT32:
+			return static_cast<uint32_t>(constant_value.GetValueUnsafe<int32_t>());
+		case PhysicalType::UINT32:
+			return constant_value.GetValueUnsafe<uint32_t>();
+		default:
+			throw InternalException("Unsupported constant type for uint32_t sketch lookup");
+		}
+	} else if constexpr (std::is_same_v<T, uint64_t>) {
+		switch (constant_value.type().InternalType()) {
+		case PhysicalType::INT64:
+			return static_cast<uint64_t>(constant_value.GetValueUnsafe<int64_t>());
+		case PhysicalType::UINT64:
+			return constant_value.GetValueUnsafe<uint64_t>();
+		default:
+			throw InternalException("Unsupported constant type for uint64_t sketch lookup");
+		}
+	} else {
+		static_assert(sizeof(T) == 0, "Unsupported sketch constant type");
+	}
+}
 
 template <>
 void NumericStats::Update<interval_t>(BaseStatistics &stats, interval_t new_value) {
@@ -231,14 +266,7 @@ FilterPropagateResult CheckSketchTemplated(const BaseStatistics &stats, Expressi
 										   const std::vector<std::shared_ptr<BaseColumnSketch>> &segment_sketches,
 										   std::vector<ManagedSelection> &vector_sels) {
 	D_ASSERT(!segment_sketches.empty());
-	T constant;
-	if constexpr (std::is_same_v<T, double>) {
-		constant = constant_value.GetValueUnsafe<double>();
-	} else {
-		using SignedT = std::make_signed_t<T>;
-		SignedT signed_val = constant_value.GetValueUnsafe<SignedT>();
-		constant = static_cast<T>(signed_val);
-	}
+	T constant = GetSketchConstant<T>(constant_value);
 
 	auto *sketch = dynamic_cast<ColumnSketchWrapper<T, uint8_t>*>(segment_sketches[index].get());
 	ManagedSelection &sel = vector_sels[index];
@@ -359,6 +387,17 @@ FilterPropagateResult NumericStats::CheckZonemap(const BaseStatistics &stats, Ex
 	}
 }
 
+static FilterPropagateResult CheckSketchDoubleTemplated(const BaseStatistics &stats, ExpressionType comparison_type,
+                                                        const Value &constant_value,
+                                                        idx_t index,
+                                                        const std::vector<std::shared_ptr<BaseColumnSketch>> &segment_sketches,
+                                                        std::vector<ManagedSelection> &vector_sels) {
+	auto encoded_constant = EncodeOrderedDouble(constant_value.GetValueUnsafe<double>());
+	auto encoded_value = Value::UBIGINT(encoded_constant);
+	return CheckSketchTemplated<uint64_t>(stats, comparison_type, encoded_value, index, segment_sketches,
+	                                      vector_sels);
+}
+
 FilterPropagateResult NumericStats::CheckSketch(const BaseStatistics &stats, ExpressionType comparison_type,const Value &constant,
 												idx_t index, std::vector<std::shared_ptr<BaseColumnSketch>> &segment_sketches,
 												std::vector<ManagedSelection> &vector_sels) {
@@ -375,7 +414,7 @@ FilterPropagateResult NumericStats::CheckSketch(const BaseStatistics &stats, Exp
 	case PhysicalType::UINT64:
 		return CheckSketchTemplated<uint64_t>(stats, comparison_type, constant, index, segment_sketches, vector_sels);
 	case PhysicalType::DOUBLE:
-		return CheckSketchTemplated<double>(stats, comparison_type, constant, index, segment_sketches, vector_sels);
+		return CheckSketchDoubleTemplated(stats, comparison_type, constant, index, segment_sketches, vector_sels);
 	default:
 	throw InternalException("Unsupported type for NumericStats::CheckSketch");
 	}

@@ -94,7 +94,8 @@ def run_duckdb(duckdb_bin, db_path, sql_text):
         [str(duckdb_bin), str(db_path)],
         input=sql_text,
         universal_newlines=True,
-        capture_output=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
         check=False,
     )
     if proc.returncode != 0:

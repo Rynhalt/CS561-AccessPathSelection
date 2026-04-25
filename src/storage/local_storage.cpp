@@ -363,9 +363,13 @@ void LocalStorage::Append(LocalAppendState &state, DataChunk &chunk) {
 		error.Throw();
 	}
 	vector<int> cached_sketch_col_idxs;
-	auto info = storage->table_ref.get().GetDataTableInfo();
-	if (info->GetTableName() == "lineitem") {
-		cached_sketch_col_idxs = {4, 5, 6, 7, 10};
+	for (idx_t col_idx = 0; col_idx < chunk.ColumnCount(); col_idx++) {
+		auto physical_type = chunk.data[col_idx].GetType().InternalType();
+		if (physical_type == PhysicalType::INT32 || physical_type == PhysicalType::UINT32 ||
+		    physical_type == PhysicalType::INT64 || physical_type == PhysicalType::UINT64 ||
+		    physical_type == PhysicalType::DOUBLE) {
+			cached_sketch_col_idxs.push_back(NumericCast<int>(col_idx));
+		}
 	}
 	//! Append the chunk to the local storage
 	auto new_row_group = storage->row_groups->sketchAppend(chunk, state.append_state, cached_sketch_col_idxs);

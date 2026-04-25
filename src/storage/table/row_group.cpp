@@ -175,7 +175,7 @@ bool RowGroup::InitializeScanWithOffset(CollectionScanState &state, idx_t vector
 	auto &column_ids = state.GetColumnIds();
 	auto filters = state.GetFilters();
 	if (filters) {
-		if (!CheckZonemap(*filters, column_ids, state.GetOptions())) {
+		if (!CheckZonemap(*filters, column_ids)) {
 			auto metrics = state.GetMetrics();
 			if (metrics && vector_offset == 0) {
 				metrics->row_groups_pruned_by_zonemap++;
@@ -211,7 +211,7 @@ bool RowGroup::InitializeScan(CollectionScanState &state) {
 	auto &column_ids = state.GetColumnIds();
 	auto filters = state.GetFilters();
 	if (filters) {
-		if (!CheckZonemap(*filters, column_ids, state.GetOptions())) {
+		if (!CheckZonemap(*filters, column_ids)) {
 			auto metrics = state.GetMetrics();
 			if (metrics) {
 				metrics->row_groups_pruned_by_zonemap++;
@@ -366,10 +366,7 @@ void RowGroup::NextVector(CollectionScanState &state) {
 	}
 }
 
-bool RowGroup::CheckZonemap(TableFilterSet &filters, const vector<storage_t> &column_ids, TableScanOptions &options) {
-	if (options.disable_zonemap) {
-		return true;
-	}
+bool RowGroup::CheckZonemap(TableFilterSet &filters, const vector<storage_t> &column_ids) {
 	for (auto &entry : filters.filters) {
 		auto column_index = entry.first;
 		auto &filter = entry.second;
@@ -416,9 +413,6 @@ static idx_t GetFilterScanCount(ColumnScanState &state, TableFilter &filter) {
 }
 
 bool RowGroup::CheckZonemapSegments(CollectionScanState &state) {
-	if (state.GetOptions().disable_zonemap) {
-	return true;
-	}
 	auto &column_ids = state.GetColumnIds();
 	auto filters = state.GetFilters();
 	if (!filters) {
@@ -524,16 +518,23 @@ void RowGroup::TemplatedScan(TransactionData transaction, CollectionScanState &s
 		auto max_count = MinValue<idx_t>(STANDARD_VECTOR_SIZE, state.max_row_group_row - current_row);
 
 		bool can_sketch = !scan_options.disable_sketch;
-		//! first check the zonemap if we have to scan this partition
-		if (can_sketch) {
-			for (idx_t i = 0; i < column_ids.size(); i++) {
-				const auto &column = column_ids[i];
+		//! Sketch pruning only needs the filtered columns to have sketches available.
+		if (can_sketch && table_filters) {
+			for (auto &entry : table_filters->filters) {
+				D_ASSERT(entry.first < column_ids.size());
+				const auto &column = column_ids[entry.first];
+				if (column == COLUMN_IDENTIFIER_ROW_ID) {
+					can_sketch = false;
+					break;
+				}
 				auto &col_data = GetColumn(column);
 				if (!col_data.is_sketched) {
 					can_sketch = false;
 					break;
 				}
 			}
+		} else if (can_sketch && !table_filters) {
+			can_sketch = false;
 		}
 		bool check_result;
 		if (can_sketch) 
@@ -901,6 +902,23 @@ void RowGroup::sketchAppend(RowGroupAppendState &state, DataChunk &chunk, idx_t 
 						all_data.push_back(static_cast<uint64_t>(sdata[i]));
 					}
 					auto sketch = std::make_shared<ColumnSketchWrapper<uint64_t, uint8_t>>(all_data);
+					if (sketch) {
+						col_data.segment_sketches.push_back(sketch->Copy());
+						ManagedSelection msel(append_count);
+						msel.Selection().Initialize(nullptr);
+						msel.SetCount(append_count);
+						col_data.vector_sels.push_back(msel);
+						col_data.is_sketched = true;
+					}
+					break;
+				}
+				case PhysicalType::DOUBLE: {
+					auto sdata = UnifiedVectorFormat::GetData<double>(data);
+					std::vector<double> all_data;
+					for (idx_t i = 0; i < append_count; ++i) {
+						all_data.push_back(sdata[i]);
+					}
+					auto sketch = std::make_shared<ColumnSketchWrapper<double, uint8_t>>(all_data);
 					if (sketch) {
 						col_data.segment_sketches.push_back(sketch->Copy());
 						ManagedSelection msel(append_count);

@@ -269,6 +269,21 @@ Value DisableZonemapSetting::GetSetting(const ClientContext &context) {
 }
 
 //===--------------------------------------------------------------------===//
+// Disable Segment Zonemap
+//===--------------------------------------------------------------------===//
+void DisableSegmentZonemapSetting::ResetLocal(ClientContext &context) {
+	ClientConfig::GetConfig(context).disable_segment_zonemap = ClientConfig().disable_segment_zonemap;
+}
+
+void DisableSegmentZonemapSetting::SetLocal(ClientContext &context, const Value &input) {
+	ClientConfig::GetConfig(context).disable_segment_zonemap = input.GetValue<bool>();
+}
+
+Value DisableSegmentZonemapSetting::GetSetting(const ClientContext &context) {
+	return Value::BOOLEAN(ClientConfig::GetConfig(context).disable_segment_zonemap);
+}
+
+//===--------------------------------------------------------------------===//
 // Default Collation
 //===--------------------------------------------------------------------===//
 void DefaultCollationSetting::SetGlobal(DatabaseInstance *db, DBConfig &config, const Value &input) {

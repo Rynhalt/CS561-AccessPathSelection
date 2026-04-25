@@ -552,7 +552,7 @@ void RowGroup::TemplatedScan(TransactionData transaction, CollectionScanState &s
 		bool check_result = true;
 		if (can_sketch) {
 			check_result = CheckSketchSegments(state);
-		} else if (!scan_options.disable_zonemap) {
+		} else if (!scan_options.disable_segment_zonemap) {
 			check_result = CheckZonemapSegments(state);
 		}
 		if (!check_result) {

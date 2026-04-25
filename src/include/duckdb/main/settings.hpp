@@ -142,7 +142,16 @@ struct DisableSketchSetting {
 
 struct DisableZonemapSetting {
 	static constexpr const char *Name = "disable_zonemap";
-	static constexpr const char *Description = "Disable zonemap-based pruning for table scans";
+	static constexpr const char *Description = "Disable row-group zonemap-based pruning for table scans";
+	static constexpr const LogicalTypeId InputType = LogicalTypeId::BOOLEAN;
+	static void SetLocal(ClientContext &context, const Value &parameter);
+	static void ResetLocal(ClientContext &context);
+	static Value GetSetting(const ClientContext &context);
+};
+
+struct DisableSegmentZonemapSetting {
+	static constexpr const char *Name = "disable_segment_zonemap";
+	static constexpr const char *Description = "Disable segment-level zonemap-based pruning for table scans";
 	static constexpr const LogicalTypeId InputType = LogicalTypeId::BOOLEAN;
 	static void SetLocal(ClientContext &context, const Value &parameter);
 	static void ResetLocal(ClientContext &context);

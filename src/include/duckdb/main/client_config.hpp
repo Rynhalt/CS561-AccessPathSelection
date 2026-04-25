@@ -83,6 +83,8 @@ struct ClientConfig {
 	bool disable_sketch = false;
 	//! Disable zonemap-based predicate pruning for table scans
 	bool disable_zonemap = false;
+	//! Disable segment-level zonemap predicate pruning for table scans
+	bool disable_segment_zonemap = false;
 	//! Use range joins for inequalities, even if there are equality predicates
 	bool prefer_range_joins = false;
 	//! If this context should also try to use the available replacement scans

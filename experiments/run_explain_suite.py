@@ -53,10 +53,13 @@ SUITES = {
 
 
 FLAG_MODES = {
-    "full": (False, False),
-    "zonemap_only": (False, True),
-    "sketch_only": (True, False),
-    "none": (True, True),
+    "full": (False, False, False),
+    "zonemap_only": (False, False, True),
+    "sketch_only": (True, True, False),
+    "none": (True, True, True),
+    "rowgroup_only": (False, True, True),
+    "rowgroup_plus_segment_zonemap": (False, False, True),
+    "rowgroup_plus_sketch": (False, True, False),
 }
 
 
@@ -144,10 +147,15 @@ def query_sqls_for_suite(suite):
     return [(extract_query_name(statement, idx + 1), statement) for idx, statement in enumerate(statements)]
 
 
-def set_flags_sql(disable_zonemap, disable_sketch):
+def set_flags_sql(disable_zonemap, disable_segment_zonemap, disable_sketch):
     zonemap = "true" if disable_zonemap else "false"
+    segment_zonemap = "true" if disable_segment_zonemap else "false"
     sketch = "true" if disable_sketch else "false"
-    return f"SET disable_zonemap={zonemap};\nSET disable_sketch={sketch};"
+    return (
+        f"SET disable_zonemap={zonemap};\n"
+        f"SET disable_segment_zonemap={segment_zonemap};\n"
+        f"SET disable_sketch={sketch};"
+    )
 
 
 def run_suite(
@@ -163,26 +171,27 @@ def run_suite(
     query_contexts = []
 
     for mode_name in mode_names:
-        disable_zonemap, disable_sketch = FLAG_MODES[mode_name]
-        flags_sql = set_flags_sql(disable_zonemap, disable_sketch)
+        disable_zonemap, disable_segment_zonemap, disable_sketch = FLAG_MODES[mode_name]
+        flags_sql = set_flags_sql(disable_zonemap, disable_segment_zonemap, disable_sketch)
         for run_index in range(1, repetitions + 1):
             for query_name, query_sql in queries:
                 sql_parts.append(flags_sql)
                 sql_parts.append(query_sql)
                 query_contexts.append(
-                    (query_name, disable_zonemap, disable_sketch, mode_name, run_index)
+                    (query_name, disable_zonemap, disable_segment_zonemap, disable_sketch, mode_name, run_index)
                 )
 
     output = run_duckdb(duckdb_bin, db_path, "\n\n".join(sql_parts) + "\n")
     explain_outputs = split_explain_outputs(output, len(query_contexts))
 
     for output, context in zip(explain_outputs, query_contexts):
-        query_name, disable_zonemap, disable_sketch, mode_name, run_index = context
+        query_name, disable_zonemap, disable_segment_zonemap, disable_sketch, mode_name, run_index = context
         results.append(
             {
                 "suite": suite.name,
                 "query_name": query_name,
                 "disable_zonemap": str(disable_zonemap).lower(),
+                "disable_segment_zonemap": str(disable_segment_zonemap).lower(),
                 "disable_sketch": str(disable_sketch).lower(),
                 "mode": mode_name,
                 "run": str(run_index),
@@ -212,6 +221,7 @@ def compute_averages(rows):
             row["query_name"],
             row["mode"],
             row["disable_zonemap"],
+            row["disable_segment_zonemap"],
             row["disable_sketch"],
         )
         grouped[key].append(row)
@@ -225,12 +235,13 @@ def compute_averages(rows):
         "vectors_processed",
     ]
     for key, group_rows in sorted(grouped.items()):
-        suite, query_name, mode, disable_zonemap, disable_sketch = key
+        suite, query_name, mode, disable_zonemap, disable_segment_zonemap, disable_sketch = key
         average_row = {
             "suite": suite,
             "query_name": query_name,
             "mode": mode,
             "disable_zonemap": disable_zonemap,
+            "disable_segment_zonemap": disable_segment_zonemap,
             "disable_sketch": disable_sketch,
             "runs": str(len(group_rows)),
         }
@@ -305,6 +316,7 @@ def main():
         "suite",
         "query_name",
         "disable_zonemap",
+        "disable_segment_zonemap",
         "disable_sketch",
         "mode",
         "run",
@@ -320,6 +332,7 @@ def main():
         "query_name",
         "mode",
         "disable_zonemap",
+        "disable_segment_zonemap",
         "disable_sketch",
         "runs",
         "avg_total_time_s",

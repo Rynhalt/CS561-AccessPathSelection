@@ -81,6 +81,7 @@ static unique_ptr<LocalTableFunctionState> TableScanInitLocal(ExecutionContext &
 	result->scan_state.options.force_fetch_row = client_config.force_fetch_row;
 	result->scan_state.options.disable_sketch = client_config.disable_sketch;
 	result->scan_state.options.disable_zonemap = client_config.disable_zonemap;
+	result->scan_state.options.disable_segment_zonemap = client_config.disable_segment_zonemap;
 	TableScanParallelStateNext(context.client, input.bind_data.get(), result.get(), gstate);
 	if (input.CanRemoveFilterColumns()) {
 		auto &tsgs = gstate->Cast<TableScanGlobalState>();
@@ -131,6 +132,7 @@ static void TableScanFunc(ClientContext &context, TableFunctionInput &data_p, Da
 	state.scan_state.options.force_fetch_row = client_config.force_fetch_row;
 	state.scan_state.options.disable_sketch = client_config.disable_sketch;
 	state.scan_state.options.disable_zonemap = client_config.disable_zonemap;
+	state.scan_state.options.disable_segment_zonemap = client_config.disable_segment_zonemap;
 	do {
 		if (bind_data.is_create_index) {
 			storage.CreateIndexScan(state.scan_state, output,

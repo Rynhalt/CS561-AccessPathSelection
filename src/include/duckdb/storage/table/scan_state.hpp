@@ -149,8 +149,10 @@ struct TableScanOptions {
 	bool force_fetch_row = false;
 	//! Disable column sketch predicate pruning
 	bool disable_sketch = false;
-	//! Disable zonemap predicate pruning
+	//! Disable row-group zonemap predicate pruning
 	bool disable_zonemap = false;
+	//! Disable segment-level zonemap predicate pruning
+	bool disable_segment_zonemap = false;
 };
 
 struct TableScanMetrics {

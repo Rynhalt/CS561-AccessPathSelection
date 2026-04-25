@@ -549,11 +549,12 @@ void RowGroup::TemplatedScan(TransactionData transaction, CollectionScanState &s
 		} else if (can_sketch && !table_filters) {
 			can_sketch = false;
 		}
-		bool check_result;
-		if (can_sketch) 
+		bool check_result = true;
+		if (can_sketch) {
 			check_result = CheckSketchSegments(state);
-		else
+		} else if (!scan_options.disable_zonemap) {
 			check_result = CheckZonemapSegments(state);
+		}
 		if (!check_result) {
 			continue;
 		}

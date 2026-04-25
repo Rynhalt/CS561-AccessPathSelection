@@ -40,6 +40,7 @@ FilterPropagateResult ConstantFilter::CheckSketchStatistics(BaseStatistics &stat
 	case PhysicalType::UINT64:
 	case PhysicalType::INT32:
 	case PhysicalType::INT64:
+	case PhysicalType::DOUBLE:
 		return NumericStats::CheckSketch(stats, comparison_type, constant, index, segment_sketches, vector_sels);
 	default:
 		return FilterPropagateResult::NO_PRUNING_POSSIBLE;

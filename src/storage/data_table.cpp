@@ -874,7 +874,20 @@ void DataTable::InitializeAppend(DuckTransaction &transaction, TableAppendState 
 
 void DataTable::Append(DataChunk &chunk, TableAppendState &state) {
 	D_ASSERT(is_root);
-	row_groups->Append(chunk, state);
+	vector<int> sketch_col_idxs;
+	for (idx_t col_idx = 0; col_idx < chunk.ColumnCount(); col_idx++) {
+		auto physical_type = chunk.data[col_idx].GetType().InternalType();
+		if (physical_type == PhysicalType::INT32 || physical_type == PhysicalType::UINT32 ||
+		    physical_type == PhysicalType::INT64 || physical_type == PhysicalType::UINT64 ||
+		    physical_type == PhysicalType::DOUBLE) {
+			sketch_col_idxs.push_back(NumericCast<int>(col_idx));
+		}
+	}
+	if (sketch_col_idxs.empty()) {
+		row_groups->Append(chunk, state);
+	} else {
+		row_groups->sketchAppend(chunk, state, sketch_col_idxs);
+	}
 }
 
 void DataTable::FinalizeAppend(DuckTransaction &transaction, TableAppendState &state) {

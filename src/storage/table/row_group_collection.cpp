@@ -335,6 +335,15 @@ bool RowGroupCollection::Append(DataChunk &chunk, TableAppendState &state) {
 	bool new_row_group = false;
 	idx_t total_append_count = chunk.size();
 	idx_t remaining = chunk.size();
+	vector<int> sketch_col_idxs;
+	for (idx_t col_idx = 0; col_idx < types.size(); col_idx++) {
+		auto physical_type = types[col_idx].InternalType();
+		if (physical_type == PhysicalType::INT32 || physical_type == PhysicalType::UINT32 ||
+		    physical_type == PhysicalType::INT64 || physical_type == PhysicalType::UINT64 ||
+		    physical_type == PhysicalType::DOUBLE) {
+			sketch_col_idxs.push_back(NumericCast<int>(col_idx));
+		}
+	}
 	state.total_append_count += total_append_count;
 	while (true) {
 		auto current_row_group = state.row_group_append_state.row_group;
@@ -343,7 +352,11 @@ bool RowGroupCollection::Append(DataChunk &chunk, TableAppendState &state) {
 		    MinValue<idx_t>(remaining, Storage::ROW_GROUP_SIZE - state.row_group_append_state.offset_in_row_group);
 		if (append_count > 0) {
 			auto previous_allocation_size = current_row_group->GetAllocationSize();
-			current_row_group->Append(state.row_group_append_state, chunk, append_count);
+			if (sketch_col_idxs.empty()) {
+				current_row_group->Append(state.row_group_append_state, chunk, append_count);
+			} else {
+				current_row_group->sketchAppend(state.row_group_append_state, chunk, append_count, sketch_col_idxs);
+			}
 			allocation_size += current_row_group->GetAllocationSize() - previous_allocation_size;
 			// merge the stats
 			auto stats_lock = stats.GetLock();

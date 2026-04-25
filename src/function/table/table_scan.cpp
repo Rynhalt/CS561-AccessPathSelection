@@ -76,16 +76,16 @@ static unique_ptr<LocalTableFunctionState> TableScanInitLocal(ExecutionContext &
 		col = storage_idx;
 	}
 	result->scan_state.Initialize(std::move(column_ids), input.filters.get());
-	TableScanParallelStateNext(context.client, input.bind_data.get(), result.get(), gstate);
-	if (input.CanRemoveFilterColumns()) {
-		auto &tsgs = gstate->Cast<TableScanGlobalState>();
-		result->all_columns.Initialize(context.client, tsgs.scanned_types);
-	}
 
 	auto &client_config = ClientConfig::GetConfig(context.client);
 	result->scan_state.options.force_fetch_row = client_config.force_fetch_row;
 	result->scan_state.options.disable_sketch = client_config.disable_sketch;
 	result->scan_state.options.disable_zonemap = client_config.disable_zonemap;
+	TableScanParallelStateNext(context.client, input.bind_data.get(), result.get(), gstate);
+	if (input.CanRemoveFilterColumns()) {
+		auto &tsgs = gstate->Cast<TableScanGlobalState>();
+		result->all_columns.Initialize(context.client, tsgs.scanned_types);
+	}
 	return std::move(result);
 }
 
@@ -130,6 +130,7 @@ static void TableScanFunc(ClientContext &context, TableFunctionInput &data_p, Da
 	auto &client_config = ClientConfig::GetConfig(context);
 	state.scan_state.options.force_fetch_row = client_config.force_fetch_row;
 	state.scan_state.options.disable_sketch = client_config.disable_sketch;
+	state.scan_state.options.disable_zonemap = client_config.disable_zonemap;
 	do {
 		if (bind_data.is_create_index) {
 			storage.CreateIndexScan(state.scan_state, output,

@@ -231,9 +231,14 @@ FilterPropagateResult CheckSketchTemplated(const BaseStatistics &stats, Expressi
 										   const std::vector<std::shared_ptr<BaseColumnSketch>> &segment_sketches,
 										   std::vector<ManagedSelection> &vector_sels) {
 	D_ASSERT(!segment_sketches.empty());
-	using SignedT = std::make_signed_t<T>;							
-	SignedT signed_val = constant_value.GetValueUnsafe<SignedT>();
-	T constant = static_cast<T>(signed_val);	
+	T constant;
+	if constexpr (std::is_same_v<T, double>) {
+		constant = constant_value.GetValueUnsafe<double>();
+	} else {
+		using SignedT = std::make_signed_t<T>;
+		SignedT signed_val = constant_value.GetValueUnsafe<SignedT>();
+		constant = static_cast<T>(signed_val);
+	}
 
 	auto *sketch = dynamic_cast<ColumnSketchWrapper<T, uint8_t>*>(segment_sketches[index].get());
 	ManagedSelection &sel = vector_sels[index];
@@ -369,6 +374,8 @@ FilterPropagateResult NumericStats::CheckSketch(const BaseStatistics &stats, Exp
 	case PhysicalType::INT64:
 	case PhysicalType::UINT64:
 		return CheckSketchTemplated<uint64_t>(stats, comparison_type, constant, index, segment_sketches, vector_sels);
+	case PhysicalType::DOUBLE:
+		return CheckSketchTemplated<double>(stats, comparison_type, constant, index, segment_sketches, vector_sels);
 	default:
 	throw InternalException("Unsupported type for NumericStats::CheckSketch");
 	}

@@ -108,7 +108,7 @@ def run_duckdb(duckdb_bin, db_path, sql_text):
 
 
 def normalize_output(output):
-    return re.sub(r"\s+", "", output)
+    return re.sub(r"[^A-Za-z0-9_:.]+", "", output)
 
 
 def parse_metric(output, label):

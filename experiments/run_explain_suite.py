@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from __future__ import annotations
 
 import argparse
 import csv
@@ -7,9 +6,9 @@ import re
 import subprocess
 import sys
 from collections import defaultdict
-from dataclasses import dataclass
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import Dict, List, Optional, Tuple
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -17,14 +16,14 @@ SQL_DIR = ROOT / "experiments" / "sql"
 DEFAULT_DUCKDB = ROOT / "build" / "release" / "duckdb"
 
 
-@dataclass(frozen=True)
-class Suite:
-    name: str
-    setup_files: tuple[str, ...]
-    query_file: str
+class Suite(object):
+    def __init__(self, name, setup_files, query_file):
+        self.name = name
+        self.setup_files = setup_files
+        self.query_file = query_file
 
 
-SUITES: dict[str, Suite] = {
+SUITES = {
     "layout_selectivity": Suite(
         name="layout_selectivity",
         setup_files=(
@@ -61,13 +60,13 @@ FLAG_MODES = {
 }
 
 
-def read_sql_file(path: Path) -> str:
+def read_sql_file(path):
     return path.read_text(encoding="utf-8")
 
 
-def split_explain_queries(sql_text: str) -> list[str]:
-    statements: list[str] = []
-    current: list[str] = []
+def split_explain_queries(sql_text):
+    statements = []
+    current = []
     for line in sql_text.splitlines():
         stripped = line.strip()
         if not stripped or stripped.startswith("--"):
@@ -83,14 +82,14 @@ def split_explain_queries(sql_text: str) -> list[str]:
     return statements
 
 
-def extract_query_name(query_sql: str, fallback_index: int) -> str:
+def extract_query_name(query_sql, fallback_index):
     match = re.search(r"\bAS\s+([A-Za-z_][A-Za-z0-9_]*)\s+FROM\b", query_sql, flags=re.IGNORECASE)
     if match:
         return match.group(1)
     return f"query_{fallback_index:02d}"
 
 
-def run_duckdb(duckdb_bin: Path, db_path: Path, sql_text: str) -> str:
+def run_duckdb(duckdb_bin, db_path, sql_text):
     proc = subprocess.run(
         [str(duckdb_bin), str(db_path)],
         input=sql_text,
@@ -107,46 +106,46 @@ def run_duckdb(duckdb_bin: Path, db_path: Path, sql_text: str) -> str:
     return proc.stdout
 
 
-def normalize_output(output: str) -> str:
+def normalize_output(output):
     return re.sub(r"\s+", "", output)
 
 
-def parse_metric(output: str, label: str) -> str | None:
+def parse_metric(output, label):
     normalized = normalize_output(output)
     match = re.search(re.escape(label) + r":([0-9.]+)", normalized)
     return match.group(1) if match else None
 
 
-def parse_total_time(output: str) -> str | None:
+def parse_total_time(output):
     normalized = normalize_output(output)
     match = re.search(r"TotalTime:([0-9.]+)s", normalized)
     return match.group(1) if match else None
 
 
-def build_setup_sql(suite: Suite) -> str:
+def build_setup_sql(suite):
     return "\n\n".join(read_sql_file(SQL_DIR / filename) for filename in suite.setup_files)
 
 
-def query_sqls_for_suite(suite: Suite) -> list[tuple[str, str]]:
+def query_sqls_for_suite(suite):
     query_text = read_sql_file(SQL_DIR / suite.query_file)
     statements = split_explain_queries(query_text)
     return [(extract_query_name(statement, idx + 1), statement) for idx, statement in enumerate(statements)]
 
 
-def set_flags_sql(disable_zonemap: bool, disable_sketch: bool) -> str:
+def set_flags_sql(disable_zonemap, disable_sketch):
     zonemap = "true" if disable_zonemap else "false"
     sketch = "true" if disable_sketch else "false"
     return f"SET disable_zonemap={zonemap};\nSET disable_sketch={sketch};"
 
 
 def run_suite(
-    duckdb_bin: Path,
-    suite: Suite,
-    db_path: Path,
-    mode_names: list[str],
-    repetitions: int,
-) -> list[dict[str, str]]:
-    results: list[dict[str, str]] = []
+    duckdb_bin,
+    suite,
+    db_path,
+    mode_names,
+    repetitions,
+):
+    results = []
     setup_sql = build_setup_sql(suite)
     run_duckdb(duckdb_bin, db_path, setup_sql)
     queries = query_sqls_for_suite(suite)
@@ -175,7 +174,7 @@ def run_suite(
     return results
 
 
-def write_csv(path: Path, fieldnames: list[str], rows: list[dict[str, str]]) -> None:
+def write_csv(path, fieldnames, rows):
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
@@ -183,8 +182,8 @@ def write_csv(path: Path, fieldnames: list[str], rows: list[dict[str, str]]) -> 
         writer.writerows(rows)
 
 
-def compute_averages(rows: list[dict[str, str]]) -> list[dict[str, str]]:
-    grouped: dict[tuple[str, str, str, str, str], list[dict[str, str]]] = defaultdict(list)
+def compute_averages(rows):
+    grouped = defaultdict(list)
     for row in rows:
         key = (
             row["suite"],
@@ -195,7 +194,7 @@ def compute_averages(rows: list[dict[str, str]]) -> list[dict[str, str]]:
         )
         grouped[key].append(row)
 
-    average_rows: list[dict[str, str]] = []
+    average_rows = []
     numeric_fields = [
         "total_time_s",
         "row_groups_pruned_by_zonemap",
@@ -220,7 +219,7 @@ def compute_averages(rows: list[dict[str, str]]) -> list[dict[str, str]]:
     return average_rows
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args():
     parser = argparse.ArgumentParser(
         description="Run EXPLAIN ANALYZE suites through the DuckDB binary and export profiler metrics to CSV."
     )
@@ -263,7 +262,7 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def main() -> int:
+def main():
     args = parse_args()
     duckdb_bin = args.duckdb.resolve()
     if not duckdb_bin.exists():
@@ -272,7 +271,7 @@ def main() -> int:
 
     selected_suites = [SUITES[name] for name in (args.suite or SUITES.keys())]
     mode_names = list(args.mode or FLAG_MODES.keys())
-    rows: list[dict[str, str]] = []
+    rows = []
 
     with TemporaryDirectory(prefix="duckdb_experiments_") as tmpdir:
         tmpdir_path = Path(tmpdir)

@@ -13,30 +13,41 @@
 -- Metrics to collect from EXPLAIN ANALYZE:
 --   Total latency per predicate class; scan timing; rows scanned/output.
 --   If engine counters are enabled: row_groups_skipped, segments_skipped, vectors_processed.
-
+-- Q41
 -- Low NDV equality probe: many duplicates per key under NDV=100.
 EXPLAIN ANALYZE SELECT count(*) AS low_eq FROM t_ndv_low WHERE a = 42;
 -- Low NDV less-than probe.
+-- Q42
 EXPLAIN ANALYZE SELECT count(*) AS low_lt FROM t_ndv_low WHERE a < 20;
+-- Q43
 -- Low NDV range probe.
 EXPLAIN ANALYZE SELECT count(*) AS low_between FROM t_ndv_low WHERE a BETWEEN 20 AND 29;
+-- Q44
 -- Low NDV conjunctive probe: adds b filter to same a range.
 EXPLAIN ANALYZE SELECT count(*) AS low_conjunct FROM t_ndv_low WHERE a BETWEEN 20 AND 29 AND b >= 25.0;
 
+-- Q45
 -- Medium NDV equality probe.
 EXPLAIN ANALYZE SELECT count(*) AS medium_eq FROM t_ndv_medium WHERE a = 4242;
+-- Q46
 -- Medium NDV less-than probe.
 EXPLAIN ANALYZE SELECT count(*) AS medium_lt FROM t_ndv_medium WHERE a < 2000;
+-- Q47
 -- Medium NDV range probe.
 EXPLAIN ANALYZE SELECT count(*) AS medium_between FROM t_ndv_medium WHERE a BETWEEN 3000 AND 3499;
+-- Q48
 -- Medium NDV conjunctive probe.
 EXPLAIN ANALYZE SELECT count(*) AS medium_conjunct FROM t_ndv_medium WHERE a BETWEEN 3000 AND 3499 AND b >= 25.0;
 
+-- Q49
 -- High NDV equality probe: near point-selective regime.
 EXPLAIN ANALYZE SELECT count(*) AS high_eq FROM t_ndv_high WHERE a = 424242;
+-- Q50
 -- High NDV less-than probe.
 EXPLAIN ANALYZE SELECT count(*) AS high_lt FROM t_ndv_high WHERE a < 200000;
+-- Q51
 -- High NDV range probe.
 EXPLAIN ANALYZE SELECT count(*) AS high_between FROM t_ndv_high WHERE a BETWEEN 300000 AND 349999;
+-- Q52
 -- High NDV conjunctive probe.
 EXPLAIN ANALYZE SELECT count(*) AS high_conjunct FROM t_ndv_high WHERE a BETWEEN 300000 AND 349999 AND b >= 25.0;

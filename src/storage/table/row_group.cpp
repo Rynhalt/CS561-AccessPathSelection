@@ -22,8 +22,18 @@
 #include "duckdb/common/serializer/binary_serializer.hpp"
 #include "duckdb/planner/filter/conjunction_filter.hpp"
 #include "duckdb/planner/filter/struct_filter.hpp"
+#include <cstring>
 
 namespace duckdb {
+
+static uint64_t EncodeOrderedDouble(double value) {
+	uint64_t bits;
+	memcpy(&bits, &value, sizeof(bits));
+	if (bits & (1ULL << 63)) {
+		return ~bits;
+	}
+	return bits ^ (1ULL << 63);
+}
 
 RowGroup::RowGroup(RowGroupCollection &collection_p, idx_t start, idx_t count)
     : SegmentBase<RowGroup>(start, count), collection(collection_p), allocation_size(0) {
@@ -914,11 +924,11 @@ void RowGroup::sketchAppend(RowGroupAppendState &state, DataChunk &chunk, idx_t 
 				}
 				case PhysicalType::DOUBLE: {
 					auto sdata = UnifiedVectorFormat::GetData<double>(data);
-					std::vector<double> all_data;
+					std::vector<uint64_t> all_data;
 					for (idx_t i = 0; i < append_count; ++i) {
-						all_data.push_back(sdata[i]);
+						all_data.push_back(EncodeOrderedDouble(sdata[i]));
 					}
-					auto sketch = std::make_shared<ColumnSketchWrapper<double, uint8_t>>(all_data);
+					auto sketch = std::make_shared<ColumnSketchWrapper<uint64_t, uint8_t>>(all_data);
 					if (sketch) {
 						col_data.segment_sketches.push_back(sketch->Copy());
 						ManagedSelection msel(append_count);

@@ -93,7 +93,7 @@ def run_duckdb(duckdb_bin, db_path, sql_text):
     proc = subprocess.run(
         [str(duckdb_bin), str(db_path)],
         input=sql_text,
-        text=True,
+        universal_newlines=True,
         capture_output=True,
         check=False,
     )

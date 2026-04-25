@@ -6,6 +6,7 @@ import csv
 import re
 import subprocess
 import sys
+from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -174,6 +175,51 @@ def run_suite(
     return results
 
 
+def write_csv(path: Path, fieldnames: list[str], rows: list[dict[str, str]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def compute_averages(rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    grouped: dict[tuple[str, str, str, str, str], list[dict[str, str]]] = defaultdict(list)
+    for row in rows:
+        key = (
+            row["suite"],
+            row["query_name"],
+            row["mode"],
+            row["disable_zonemap"],
+            row["disable_sketch"],
+        )
+        grouped[key].append(row)
+
+    average_rows: list[dict[str, str]] = []
+    numeric_fields = [
+        "total_time_s",
+        "row_groups_pruned_by_zonemap",
+        "segments_pruned_by_zonemap",
+        "segments_pruned_by_sketch",
+        "vectors_processed",
+    ]
+    for key, group_rows in sorted(grouped.items()):
+        suite, query_name, mode, disable_zonemap, disable_sketch = key
+        average_row = {
+            "suite": suite,
+            "query_name": query_name,
+            "mode": mode,
+            "disable_zonemap": disable_zonemap,
+            "disable_sketch": disable_sketch,
+            "runs": str(len(group_rows)),
+        }
+        for field in numeric_fields:
+            values = [float(row[field]) for row in group_rows if row[field] != ""]
+            average_row[f"avg_{field}"] = f"{sum(values) / len(values):.6f}" if values else ""
+        average_rows.append(average_row)
+    return average_rows
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Run EXPLAIN ANALYZE suites through the DuckDB binary and export profiler metrics to CSV."
@@ -206,7 +252,13 @@ def parse_args() -> argparse.Namespace:
         "--output",
         type=Path,
         default=ROOT / "experiments" / "results" / "explain_metrics.csv",
-        help="CSV output path",
+        help="Per-run CSV output path",
+    )
+    parser.add_argument(
+        "--summary-output",
+        type=Path,
+        default=ROOT / "experiments" / "results" / "explain_metrics_summary.csv",
+        help="Per-query/per-mode average CSV output path",
     )
     return parser.parse_args()
 
@@ -228,8 +280,7 @@ def main() -> int:
             db_path = tmpdir_path / f"{suite.name}.duckdb"
             rows.extend(run_suite(duckdb_bin, suite, db_path, mode_names, args.repetitions))
 
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    fieldnames = [
+    per_run_fieldnames = [
         "suite",
         "query_name",
         "disable_zonemap",
@@ -242,12 +293,25 @@ def main() -> int:
         "segments_pruned_by_sketch",
         "vectors_processed",
     ]
-    with args.output.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(rows)
+    summary_rows = compute_averages(rows)
+    summary_fieldnames = [
+        "suite",
+        "query_name",
+        "mode",
+        "disable_zonemap",
+        "disable_sketch",
+        "runs",
+        "avg_total_time_s",
+        "avg_row_groups_pruned_by_zonemap",
+        "avg_segments_pruned_by_zonemap",
+        "avg_segments_pruned_by_sketch",
+        "avg_vectors_processed",
+    ]
+    write_csv(args.output, per_run_fieldnames, rows)
+    write_csv(args.summary_output, summary_fieldnames, summary_rows)
 
-    print(f"Wrote {len(rows)} rows to {args.output}")
+    print(f"Wrote {len(rows)} per-run rows to {args.output}")
+    print(f"Wrote {len(summary_rows)} summary rows to {args.summary_output}")
     return 0
 
 

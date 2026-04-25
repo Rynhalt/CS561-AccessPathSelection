@@ -185,7 +185,7 @@ bool RowGroup::InitializeScanWithOffset(CollectionScanState &state, idx_t vector
 	auto &column_ids = state.GetColumnIds();
 	auto filters = state.GetFilters();
 	if (filters) {
-		if (!CheckZonemap(*filters, column_ids)) {
+		if (!CheckZonemap(*filters, column_ids, state.GetOptions())) {
 			auto metrics = state.GetMetrics();
 			if (metrics && vector_offset == 0) {
 				metrics->row_groups_pruned_by_zonemap++;
@@ -221,7 +221,7 @@ bool RowGroup::InitializeScan(CollectionScanState &state) {
 	auto &column_ids = state.GetColumnIds();
 	auto filters = state.GetFilters();
 	if (filters) {
-		if (!CheckZonemap(*filters, column_ids)) {
+		if (!CheckZonemap(*filters, column_ids, state.GetOptions())) {
 			auto metrics = state.GetMetrics();
 			if (metrics) {
 				metrics->row_groups_pruned_by_zonemap++;
@@ -376,7 +376,10 @@ void RowGroup::NextVector(CollectionScanState &state) {
 	}
 }
 
-bool RowGroup::CheckZonemap(TableFilterSet &filters, const vector<storage_t> &column_ids) {
+bool RowGroup::CheckZonemap(TableFilterSet &filters, const vector<storage_t> &column_ids, TableScanOptions &options) {
+	if (options.disable_zonemap) {
+		return true;
+	}
 	for (auto &entry : filters.filters) {
 		auto column_index = entry.first;
 		auto &filter = entry.second;

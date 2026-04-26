@@ -2,6 +2,7 @@
 
 import argparse
 import csv
+import os
 import re
 import subprocess
 import sys
@@ -14,6 +15,13 @@ from typing import Dict, List, Optional, Tuple
 ROOT = Path(__file__).resolve().parents[1]
 SQL_DIR = ROOT / "experiments" / "sql"
 DEFAULT_DUCKDB = ROOT / "build" / "release" / "duckdb"
+THREAD_ENV_VARS = (
+    "OMP_NUM_THREADS",
+    "OPENBLAS_NUM_THREADS",
+    "MKL_NUM_THREADS",
+    "VECLIB_MAXIMUM_THREADS",
+    "NUMEXPR_NUM_THREADS",
+)
 
 
 class Suite(object):
@@ -92,13 +100,22 @@ def extract_query_name(query_sql, fallback_index):
     return f"query_{fallback_index:02d}"
 
 
-def run_duckdb(duckdb_bin, db_path, sql_text):
+def thread_limited_env(threads):
+    env = os.environ.copy()
+    for name in THREAD_ENV_VARS:
+        env[name] = str(threads)
+    return env
+
+
+def run_duckdb(duckdb_bin, db_path, sql_text, threads):
+    sql_text = f"SET threads={threads};\n{sql_text}"
     proc = subprocess.run(
         [str(duckdb_bin), str(db_path)],
         input=sql_text,
         universal_newlines=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
+        env=thread_limited_env(threads),
         check=False,
     )
     if proc.returncode != 0:
@@ -169,6 +186,7 @@ def run_suite(
     mode_names,
     repetitions,
     selected_queries=None,
+    threads=1,
 ):
     results = []
     queries = query_sqls_for_suite(suite, selected_queries=selected_queries)
@@ -186,7 +204,7 @@ def run_suite(
                     (query_name, disable_zonemap, disable_segment_zonemap, disable_sketch, mode_name, run_index)
                 )
 
-        output = run_duckdb(duckdb_bin, db_path, "\n\n".join(sql_parts) + "\n")
+        output = run_duckdb(duckdb_bin, db_path, "\n\n".join(sql_parts) + "\n", threads)
         explain_outputs = split_explain_outputs(output, len(query_contexts))
 
         for output, context in zip(explain_outputs, query_contexts):
@@ -302,6 +320,12 @@ def parse_args():
         default=ROOT / "experiments" / "results" / "explain_metrics_summary.csv",
         help="Per-query/per-mode average CSV output path",
     )
+    parser.add_argument(
+        "--threads",
+        type=int,
+        default=1,
+        help="DuckDB execution threads to use (default: 1)",
+    )
     return parser.parse_args()
 
 
@@ -320,7 +344,17 @@ def main():
         tmpdir_path = Path(tmpdir)
         for suite in selected_suites:
             db_path = tmpdir_path / f"{suite.name}.duckdb"
-            rows.extend(run_suite(duckdb_bin, suite, db_path, mode_names, args.repetitions, selected_queries=args.query))
+            rows.extend(
+                run_suite(
+                    duckdb_bin,
+                    suite,
+                    db_path,
+                    mode_names,
+                    args.repetitions,
+                    selected_queries=args.query,
+                    threads=args.threads,
+                )
+            )
 
     per_run_fieldnames = [
         "suite",

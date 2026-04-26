@@ -1,2 +1,0 @@
-suite,query_name,mode,disable_zonemap,disable_segment_zonemap,disable_sketch,runs,avg_total_time_s,avg_row_groups_pruned_by_zonemap,avg_segments_pruned_by_zonemap,avg_segments_pruned_by_sketch,avg_vectors_processed
-ndv_selectivity,high_1_pct,rowgroup_plus_sketch,false,true,false,1,0.000900,71.000000,0.000000,601.000000,59.000000

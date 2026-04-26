@@ -219,6 +219,19 @@ io_file
 
 ## General
 
+# Experiment runner scratch outputs. Keep the suite/cumulative CSVs in
+# experiments/results tracked explicitly, but do not commit per-query chunks or
+# smoke/repro/probe artifacts.
+experiments/results/chunks/
+experiments/results/repro_chunks/
+experiments/results/repro_skip_chunks/
+experiments/results/explain_metrics_failures.csv
+experiments/results/probe_*.csv
+experiments/results/repro_*.csv
+experiments/results/smoke_*.csv
+experiments/results/test_workflow_*.csv
+experiments/results/thread_smoke_*.csv
+
 # Compiled Object files
 *.slo
 *.lo

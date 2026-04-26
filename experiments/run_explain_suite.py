@@ -141,10 +141,14 @@ def build_setup_sql(suite):
     return "\n\n".join(read_sql_file(SQL_DIR / filename) for filename in suite.setup_files)
 
 
-def query_sqls_for_suite(suite):
+def query_sqls_for_suite(suite, selected_queries=None):
     query_text = read_sql_file(SQL_DIR / suite.query_file)
     statements = split_explain_queries(query_text)
-    return [(extract_query_name(statement, idx + 1), statement) for idx, statement in enumerate(statements)]
+    queries = [(extract_query_name(statement, idx + 1), statement) for idx, statement in enumerate(statements)]
+    if selected_queries:
+        selected = set(selected_queries)
+        queries = [item for item in queries if item[0] in selected]
+    return queries
 
 
 def set_flags_sql(disable_zonemap, disable_segment_zonemap, disable_sketch):
@@ -164,15 +168,16 @@ def run_suite(
     db_path,
     mode_names,
     repetitions,
+    selected_queries=None,
 ):
     results = []
-    queries = query_sqls_for_suite(suite)
-    sql_parts = [build_setup_sql(suite)]
-    query_contexts = []
-
+    queries = query_sqls_for_suite(suite, selected_queries=selected_queries)
+    setup_sql = build_setup_sql(suite)
     for mode_name in mode_names:
         disable_zonemap, disable_segment_zonemap, disable_sketch = FLAG_MODES[mode_name]
         flags_sql = set_flags_sql(disable_zonemap, disable_segment_zonemap, disable_sketch)
+        sql_parts = [setup_sql]
+        query_contexts = []
         for run_index in range(1, repetitions + 1):
             for query_name, query_sql in queries:
                 sql_parts.append(flags_sql)
@@ -181,27 +186,27 @@ def run_suite(
                     (query_name, disable_zonemap, disable_segment_zonemap, disable_sketch, mode_name, run_index)
                 )
 
-    output = run_duckdb(duckdb_bin, db_path, "\n\n".join(sql_parts) + "\n")
-    explain_outputs = split_explain_outputs(output, len(query_contexts))
+        output = run_duckdb(duckdb_bin, db_path, "\n\n".join(sql_parts) + "\n")
+        explain_outputs = split_explain_outputs(output, len(query_contexts))
 
-    for output, context in zip(explain_outputs, query_contexts):
-        query_name, disable_zonemap, disable_segment_zonemap, disable_sketch, mode_name, run_index = context
-        results.append(
-            {
-                "suite": suite.name,
-                "query_name": query_name,
-                "disable_zonemap": str(disable_zonemap).lower(),
-                "disable_segment_zonemap": str(disable_segment_zonemap).lower(),
-                "disable_sketch": str(disable_sketch).lower(),
-                "mode": mode_name,
-                "run": str(run_index),
-                "total_time_s": parse_total_time(output) or "",
-                "row_groups_pruned_by_zonemap": parse_metric(output, "row_groups_pruned_by_zonemap") or "",
-                "segments_pruned_by_zonemap": parse_metric(output, "segments_pruned_by_zonemap") or "",
-                "segments_pruned_by_sketch": parse_metric(output, "segments_pruned_by_sketch") or "",
-                "vectors_processed": parse_metric(output, "vectors_processed") or "",
-            }
-        )
+        for output, context in zip(explain_outputs, query_contexts):
+            query_name, disable_zonemap, disable_segment_zonemap, disable_sketch, mode_name, run_index = context
+            results.append(
+                {
+                    "suite": suite.name,
+                    "query_name": query_name,
+                    "disable_zonemap": str(disable_zonemap).lower(),
+                    "disable_segment_zonemap": str(disable_segment_zonemap).lower(),
+                    "disable_sketch": str(disable_sketch).lower(),
+                    "mode": mode_name,
+                    "run": str(run_index),
+                    "total_time_s": parse_total_time(output) or "",
+                    "row_groups_pruned_by_zonemap": parse_metric(output, "row_groups_pruned_by_zonemap") or "",
+                    "segments_pruned_by_zonemap": parse_metric(output, "segments_pruned_by_zonemap") or "",
+                    "segments_pruned_by_sketch": parse_metric(output, "segments_pruned_by_sketch") or "",
+                    "vectors_processed": parse_metric(output, "vectors_processed") or "",
+                }
+            )
     return results
 
 
@@ -275,6 +280,11 @@ def parse_args():
         help="Flag mode to run. Repeat to run multiple modes. Defaults to all modes.",
     )
     parser.add_argument(
+        "--query",
+        action="append",
+        help="Query name to run. Repeat to run multiple queries. Defaults to all queries in the suite.",
+    )
+    parser.add_argument(
         "--repetitions",
         type=int,
         default=1,
@@ -310,7 +320,7 @@ def main():
         tmpdir_path = Path(tmpdir)
         for suite in selected_suites:
             db_path = tmpdir_path / f"{suite.name}.duckdb"
-            rows.extend(run_suite(duckdb_bin, suite, db_path, mode_names, args.repetitions))
+            rows.extend(run_suite(duckdb_bin, suite, db_path, mode_names, args.repetitions, selected_queries=args.query))
 
     per_run_fieldnames = [
         "suite",

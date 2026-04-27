@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760">
+<rect width="100%" height="100%" fill="white"/>
+<text x="600.0" y="44" text-anchor="middle" font-family="Arial" font-size="30" font-weight="600">Experiment 6: Medium-NDV Focused Segment Comparison</text>
+<line x1="155" y1="80" x2="155" y2="605" stroke="#333"/>
+<line x1="155" y1="605" x2="1130" y2="605" stroke="#333"/>
+<text x="34" y="342.5" transform="rotate(-90 34 342.5)" text-anchor="middle" font-family="Arial" font-size="24">avg_vectors_processed</text>
+<text x="642.5" y="718" text-anchor="middle" font-family="Arial" font-size="24">Selectivity (%)</text>
+<line x1="155" y1="605.0" x2="1130" y2="605.0" stroke="#ddd"/>
+<text x="141" y="612.0" text-anchor="end" font-family="Arial" font-size="20">0</text>
+<line x1="155" y1="500.0" x2="1130" y2="500.0" stroke="#ddd"/>
+<text x="141" y="507.0" text-anchor="end" font-family="Arial" font-size="20">1,055</text>
+<line x1="155" y1="395.0" x2="1130" y2="395.0" stroke="#ddd"/>
+<text x="141" y="402.0" text-anchor="end" font-family="Arial" font-size="20">2,109</text>
+<line x1="155" y1="290.0" x2="1130" y2="290.0" stroke="#ddd"/>
+<text x="141" y="297.0" text-anchor="end" font-family="Arial" font-size="20">3,164</text>
+<line x1="155" y1="185.0" x2="1130" y2="185.0" stroke="#ddd"/>
+<text x="141" y="192.0" text-anchor="end" font-family="Arial" font-size="20">4,219</text>
+<line x1="155" y1="80.0" x2="1130" y2="80.0" stroke="#ddd"/>
+<text x="141" y="87.0" text-anchor="end" font-family="Arial" font-size="20">5,274</text>
+<text x="155.0" y="651" text-anchor="middle" font-family="Arial" font-size="20">1.0</text>
+<text x="350.0" y="651" text-anchor="middle" font-family="Arial" font-size="20">5.0</text>
+<text x="545.0" y="651" text-anchor="middle" font-family="Arial" font-size="20">10.0</text>
+<text x="740.0" y="651" text-anchor="middle" font-family="Arial" font-size="20">20.0</text>
+<text x="935.0" y="651" text-anchor="middle" font-family="Arial" font-size="20">50.0</text>
+<text x="1130.0" y="651" text-anchor="middle" font-family="Arial" font-size="20">90.0</text>
+<polyline points="155.0,118.9 350.0,118.9 545.0,118.9 740.0,118.9 935.0,118.9 1130.0,118.9" fill="none" stroke="#e67e22" stroke-width="4"/>
+<circle cx="155.0" cy="118.9" r="6" fill="#e67e22"/>
+<circle cx="350.0" cy="118.9" r="6" fill="#e67e22"/>
+<circle cx="545.0" cy="118.9" r="6" fill="#e67e22"/>
+<circle cx="740.0" cy="118.9" r="6" fill="#e67e22"/>
+<circle cx="935.0" cy="118.9" r="6" fill="#e67e22"/>
+<circle cx="1130.0" cy="118.9" r="6" fill="#e67e22"/>
+<polyline points="155.0,500.7 350.0,481.3 545.0,457.2 740.0,409.0 935.0,262.7 1130.0,118.9" fill="none" stroke="#2ca02c" stroke-width="4"/>
+<circle cx="155.0" cy="500.7" r="6" fill="#2ca02c"/>
+<circle cx="350.0" cy="481.3" r="6" fill="#2ca02c"/>
+<circle cx="545.0" cy="457.2" r="6" fill="#2ca02c"/>
+<circle cx="740.0" cy="409.0" r="6" fill="#2ca02c"/>
+<circle cx="935.0" cy="262.7" r="6" fill="#2ca02c"/>
+<circle cx="1130.0" cy="118.9" r="6" fill="#2ca02c"/>
+<rect x="800" y="94" width="24" height="24" fill="#e67e22"/>
+<text x="834" y="116" font-family="Arial" font-size="22">Segment Zonemap</text>
+<rect x="800" y="132" width="24" height="24" fill="#2ca02c"/>
+<text x="834" y="154" font-family="Arial" font-size="22">Column Sketch</text>
+</svg>

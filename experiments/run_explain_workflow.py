@@ -31,6 +31,18 @@ SUITES = {
 }
 
 
+DEFAULT_MODES = [
+    "full",
+    "zonemap_only",
+    "segment_zonemap_only",
+    "sketch_only",
+    "none",
+    "rowgroup_only",
+    "rowgroup_plus_segment_zonemap",
+    "rowgroup_plus_sketch",
+]
+
+
 PER_RUN_FIELDNAMES = [
     "suite",
     "query_name",
@@ -131,6 +143,21 @@ def chunk_is_complete(path, repetitions):
     return len(read_csv(path)) == repetitions
 
 
+def suite_is_complete(path, suite_name, query_names, mode_names, repetitions):
+    if not path.exists():
+        return False
+    rows = read_csv(path)
+    counts = defaultdict(int)
+    for row in rows:
+        if row["suite"] == suite_name:
+            counts[(row["query_name"], row["mode"])] += 1
+    for query_name in query_names:
+        for mode_name in mode_names:
+            if counts[(query_name, mode_name)] != repetitions:
+                return False
+    return True
+
+
 def suite_output_path(path, suite_name):
     suffix = path.suffix or ".csv"
     return path.with_name(f"{path.stem}_{suite_name}{suffix}")
@@ -214,6 +241,7 @@ def parse_args():
         choices=[
             "full",
             "zonemap_only",
+            "segment_zonemap_only",
             "sketch_only",
             "none",
             "rowgroup_only",
@@ -287,18 +315,7 @@ def main():
             raise RuntimeError("--start-suite cannot be combined with explicit --suite filters")
         suite_names = list(SUITES.keys())
         selected_suites = suite_names[suite_names.index(args.start_suite) :]
-    selected_modes = list(
-        args.mode
-        or [
-            "full",
-            "zonemap_only",
-            "sketch_only",
-            "none",
-            "rowgroup_only",
-            "rowgroup_plus_segment_zonemap",
-            "rowgroup_plus_sketch",
-        ]
-    )
+    selected_modes = list(args.mode or DEFAULT_MODES)
     all_rows = []
     failure_rows = []
 
@@ -309,7 +326,17 @@ def main():
             suite_rows = []
             suite_run_output = suite_output_path(args.output, suite_name)
             suite_summary_output = suite_output_path(args.summary_output, suite_name)
-            if args.skip_completed_suites and suite_run_output.exists():
+
+            query_names = query_names_for_suite(suite_name)
+            if requested_queries is not None:
+                query_names = [name for name in query_names if name in requested_queries]
+                if not query_names:
+                    raise RuntimeError(
+                        f"No queries matched the requested filter for suite {suite_name}: {sorted(requested_queries)}"
+                    )
+            if args.skip_completed_suites and suite_is_complete(
+                suite_run_output, suite_name, query_names, selected_modes, args.repetitions
+            ):
                 suite_rows = read_csv(suite_run_output)
                 all_rows.extend(suite_rows)
                 summary_rows = compute_averages(all_rows)
@@ -319,14 +346,6 @@ def main():
                 print(f"Updated cumulative rows at {args.output}")
                 print(f"Updated cumulative summary at {args.summary_output}")
                 continue
-
-            query_names = query_names_for_suite(suite_name)
-            if requested_queries is not None:
-                query_names = [name for name in query_names if name in requested_queries]
-                if not query_names:
-                    raise RuntimeError(
-                        f"No queries matched the requested filter for suite {suite_name}: {sorted(requested_queries)}"
-                    )
             for mode_name in selected_modes:
                 for query_name in query_names:
                     chunk_output = args.chunk_dir / f"{suite_name}_{mode_name}_{query_name}_runs.csv"

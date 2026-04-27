@@ -63,6 +63,7 @@ SUITES = {
 FLAG_MODES = {
     "full": (False, False, False),
     "zonemap_only": (False, False, True),
+    "segment_zonemap_only": (True, False, True),
     "sketch_only": (True, True, False),
     "none": (True, True, True),
     "rowgroup_only": (False, True, True),

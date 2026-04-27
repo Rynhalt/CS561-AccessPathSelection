@@ -229,6 +229,8 @@ experiments/results/explain_metrics_failures.csv
 experiments/results/probe_*.csv
 experiments/results/repro_*.csv
 experiments/results/smoke_*.csv
+experiments/results/segment_zm_smoke_*.csv
+experiments/results/segment_zm_smoke_chunks/
 experiments/results/test_workflow_*.csv
 experiments/results/thread_smoke_*.csv
 

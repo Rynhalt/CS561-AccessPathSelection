@@ -13,6 +13,7 @@
 #include "duckdb/storage/data_pointer.hpp"
 #include "duckdb/storage/table/persistent_table_data.hpp"
 #include "duckdb/storage/statistics/segment_statistics.hpp"
+#include "duckdb/storage/statistics/rabit_index.hpp"
 #include "duckdb/storage/table/segment_tree.hpp"
 #include "duckdb/storage/table/column_segment_tree.hpp"
 #include "duckdb/common/mutex.hpp"
@@ -68,10 +69,18 @@ public:
 
 	std::vector<std::shared_ptr<BaseColumnSketch>> segment_sketches;
 	bool is_sketched = false;
+	std::vector<std::shared_ptr<RabitGEIndex>> segment_rabit_indexes;
+	bool is_rabit_indexed = false;
 	std::vector<ManagedSelection> vector_sels;
 public:
 	virtual bool CheckZonemap(ColumnScanState &state, TableFilter &filter) = 0;
 	virtual bool CheckSketch(ColumnScanState &state, TableFilter &filter, idx_t index) = 0;
+	virtual bool CheckRabit(ColumnScanState &state, TableFilter &filter, idx_t index) {
+		if (!is_rabit_indexed || index >= segment_rabit_indexes.size()) {
+			return true;
+		}
+		return segment_rabit_indexes[index]->MayHaveMatch(filter);
+	}
 
 	BlockManager &GetBlockManager() {
 		return block_manager;

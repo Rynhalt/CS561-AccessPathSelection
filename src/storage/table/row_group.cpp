@@ -513,6 +513,44 @@ bool RowGroup::CheckSketchSegments(CollectionScanState &state) {
 	return true;
 }
 
+bool RowGroup::CheckRabitSegments(CollectionScanState &state) {
+	auto &column_ids = state.GetColumnIds();
+	auto filters = state.GetFilters();
+	if (!filters) {
+		return true;
+	}
+	for (auto &entry : filters->filters) {
+		D_ASSERT(entry.first < column_ids.size());
+		auto column_idx = entry.first;
+		const auto &base_column_idx = column_ids[column_idx];
+		bool read_segment = GetColumn(base_column_idx).CheckRabit(state.column_scans[column_idx], *entry.second, state.vector_index);
+		if (!read_segment) {
+			auto metrics = state.GetMetrics();
+			if (metrics) {
+				metrics->segments_pruned_by_rabit++;
+			}
+
+			idx_t target_row = GetFilterScanCount(state.column_scans[column_idx], *entry.second);
+			if (target_row >= state.max_row) {
+				target_row = state.max_row;
+			}
+
+			D_ASSERT(target_row >= this->start);
+			D_ASSERT(target_row <= this->start + this->count);
+			idx_t target_vector_index = (target_row - this->start) / STANDARD_VECTOR_SIZE;
+			if (state.vector_index == target_vector_index) {
+				return true;
+			}
+			if (state.vector_index < target_vector_index) {
+				NextVector(state);
+			}
+			return false;
+		}
+	}
+
+	return true;
+}
+
 
 template <TableScanType TYPE>
 void RowGroup::TemplatedScan(TransactionData transaction, CollectionScanState &state, DataChunk &result) {
@@ -530,7 +568,25 @@ void RowGroup::TemplatedScan(TransactionData transaction, CollectionScanState &s
 		idx_t current_row = state.vector_index * STANDARD_VECTOR_SIZE;
 		auto max_count = MinValue<idx_t>(STANDARD_VECTOR_SIZE, state.max_row_group_row - current_row);
 
+		bool can_rabit = !scan_options.disable_rabit;
 		bool can_sketch = !scan_options.disable_sketch;
+		if (can_rabit && table_filters) {
+			for (auto &entry : table_filters->filters) {
+				D_ASSERT(entry.first < column_ids.size());
+				const auto &column = column_ids[entry.first];
+				if (column == COLUMN_IDENTIFIER_ROW_ID) {
+					can_rabit = false;
+					break;
+				}
+				auto &col_data = GetColumn(column);
+				if (!col_data.is_rabit_indexed) {
+					can_rabit = false;
+					break;
+				}
+			}
+		} else if (can_rabit && !table_filters) {
+			can_rabit = false;
+		}
 		//! Sketch pruning only needs the filtered columns to have sketches available.
 		if (can_sketch && table_filters) {
 			for (auto &entry : table_filters->filters) {
@@ -550,7 +606,9 @@ void RowGroup::TemplatedScan(TransactionData transaction, CollectionScanState &s
 			can_sketch = false;
 		}
 		bool check_result = true;
-		if (can_sketch) {
+		if (can_rabit) {
+			check_result = CheckRabitSegments(state);
+		} else if (can_sketch) {
 			check_result = CheckSketchSegments(state);
 		} else if (!scan_options.disable_segment_zonemap) {
 			check_result = CheckZonemapSegments(state);
@@ -894,8 +952,10 @@ void RowGroup::sketchAppend(RowGroupAppendState &state, DataChunk &chunk, idx_t 
 				case PhysicalType::UINT32: {
 					auto sdata = UnifiedVectorFormat::GetData<int32_t>(data);
 					std::vector<uint32_t> all_data;
+					vector<int64_t> rabit_data;
 					for (idx_t i = 0; i < append_count; ++i) {
 						all_data.push_back(static_cast<uint32_t>(sdata[i]));
+						rabit_data.push_back(static_cast<int64_t>(sdata[i]));
 					}
 					auto sketch = std::make_shared<ColumnSketchWrapper<uint32_t, uint8_t>>(all_data);
 					if (sketch) {
@@ -906,14 +966,18 @@ void RowGroup::sketchAppend(RowGroupAppendState &state, DataChunk &chunk, idx_t 
 						col_data.vector_sels.push_back(msel);
 						col_data.is_sketched = true;
 					}
+					col_data.segment_rabit_indexes.push_back(std::make_shared<RabitGEIndex>(rabit_data));
+					col_data.is_rabit_indexed = true;
 					break;
 				}
 				case PhysicalType::INT64:
 				case PhysicalType::UINT64: {
 					auto sdata = UnifiedVectorFormat::GetData<int64_t>(data);
 					std::vector<uint64_t> all_data;
+					vector<int64_t> rabit_data;
 					for (idx_t i = 0; i < append_count; ++i) {
 						all_data.push_back(static_cast<uint64_t>(sdata[i]));
+						rabit_data.push_back(static_cast<int64_t>(sdata[i]));
 					}
 					auto sketch = std::make_shared<ColumnSketchWrapper<uint64_t, uint8_t>>(all_data);
 					if (sketch) {
@@ -924,6 +988,8 @@ void RowGroup::sketchAppend(RowGroupAppendState &state, DataChunk &chunk, idx_t 
 						col_data.vector_sels.push_back(msel);
 						col_data.is_sketched = true;
 					}
+					col_data.segment_rabit_indexes.push_back(std::make_shared<RabitGEIndex>(rabit_data));
+					col_data.is_rabit_indexed = true;
 					break;
 				}
 				case PhysicalType::DOUBLE: {

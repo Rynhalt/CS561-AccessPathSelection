@@ -118,6 +118,8 @@ def try_pandas_matplotlib(summary_csv, output_dir):
         fig, ax = plt.subplots(figsize=(9.5, 5.6))
         x_values = ordered_values(data[x_col], preferred_x)
         x_lookup = {x: i for i, x in enumerate(x_values)}
+        numeric_x = all(isinstance(x, (int, float)) for x in x_values)
+        axis_x_values = ([0.0] + [x for x in x_values if x != 0.0]) if numeric_x else x_values
         plot_y_col = y_col
         if latency:
             data = data.copy()
@@ -125,7 +127,10 @@ def try_pandas_matplotlib(summary_csv, output_dir):
             data[plot_y_col] = data[y_col] * 1000.0
         for mode in MODES:
             sub = data[data["mode"] == mode].copy()
-            sub["_xpos"] = sub[x_col].map(x_lookup)
+            if numeric_x:
+                sub["_xpos"] = sub[x_col]
+            else:
+                sub["_xpos"] = sub[x_col].map(x_lookup)
             sub = sub.sort_values("_xpos")
             ax.plot(
                 sub["_xpos"],
@@ -138,20 +143,17 @@ def try_pandas_matplotlib(summary_csv, output_dir):
         ax.set_title(title, fontsize=22)
         ax.set_xlabel(xlabel, fontsize=19, labelpad=14)
         ax.set_ylabel(ylabel, fontsize=19, labelpad=14)
-        ax.set_xticks(range(len(x_values)))
-        ax.set_xticklabels([str(x) for x in x_values], fontsize=16)
+        if numeric_x:
+            ax.set_xlim(left=0)
+            ax.set_xticks(axis_x_values)
+            ax.set_xticklabels([str(x) for x in axis_x_values], fontsize=16)
+        else:
+            ax.set_xticks(range(len(x_values)))
+            ax.set_xticklabels([str(x) for x in x_values], fontsize=16)
         ax.tick_params(axis="y", labelsize=16)
         ax.ticklabel_format(style="plain", axis="y")
         ax.grid(True, alpha=0.25)
-        if latency:
-            ymin = data[plot_y_col].min()
-            ymax = data[plot_y_col].max()
-            spread = ymax - ymin
-            lower_pad = max(ymin * 0.30, 0.05)
-            upper_pad = max(spread * 0.15, ymax * 0.03, 0.05)
-            ax.set_ylim(max(0, ymin - lower_pad), ymax + upper_pad)
-        else:
-            ax.set_ylim(bottom=0)
+        ax.set_ylim(bottom=0)
         ax.legend(fontsize=16)
         fig.tight_layout()
         fig.savefig(path, dpi=170)
@@ -179,15 +181,7 @@ def try_pandas_matplotlib(summary_csv, output_dir):
         ax.tick_params(axis="y", labelsize=16)
         ax.ticklabel_format(style="plain", axis="y")
         ax.grid(True, axis="y", alpha=0.25)
-        if latency:
-            ymin = data[plot_y_col].min()
-            ymax = data[plot_y_col].max()
-            spread = ymax - ymin
-            lower_pad = max(ymin * 0.30, 0.05)
-            upper_pad = max(spread * 0.15, ymax * 0.03, 0.05)
-            ax.set_ylim(max(0, ymin - lower_pad), ymax + upper_pad)
-        else:
-            ax.set_ylim(bottom=0)
+        ax.set_ylim(bottom=0)
         ax.legend(fontsize=16)
         fig.tight_layout()
         fig.savefig(path, dpi=170)
@@ -195,16 +189,16 @@ def try_pandas_matplotlib(summary_csv, output_dir):
 
     layout = add_layout_fields(df[df["suite"] == "layout_selectivity"])
     block = layout[layout["layout"] == "block_sorted"]
-    selectivity_order = [0.1, 1.0, 5.0, 10.0, 20.0, 50.0, 90.0]
+    selectivity_order = [0.0, 0.1, 1.0, 5.0, 10.0, 20.0, 50.0, 90.0]
     plot_lines(block, "selectivity", "avg_vectors_processed", "Experiment 1: Selectivity vs Vectors Processed", "Selectivity (%)", "avg_vectors_processed", os.path.join(output_dir, "selectivity", "vectors_processed.png"), selectivity_order)
-    plot_lines(block, "selectivity", "avg_total_time_s", "Experiment 1: Selectivity vs Latency", "Selectivity (%)", "avg_total_time_s (ms)", os.path.join(output_dir, "selectivity", "latency.png"), selectivity_order, True)
+    plot_lines(block, "selectivity", "avg_total_time_s", "Experiment 1: Selectivity vs Latency", "Selectivity (%)", "avg_total_time_ms", os.path.join(output_dir, "selectivity", "latency.png"), selectivity_order, True)
 
     layout_avg = layout.groupby(["layout", "mode"], as_index=False)[["avg_vectors_processed", "avg_total_time_s"]].mean()
     layout_avg["layout"] = pd.Categorical(layout_avg["layout"], ["random", "sorted", "block_sorted"], ordered=True)
     layout_avg = layout_avg.sort_values("layout")
     layout_order = ["random", "sorted", "block_sorted"]
     plot_grouped_bars(layout_avg, "layout", "avg_vectors_processed", "Experiment 2: Layout vs Vectors Processed", "Physical Layout", "avg_vectors_processed", os.path.join(output_dir, "layout", "vectors_processed.png"), layout_order)
-    plot_grouped_bars(layout_avg, "layout", "avg_total_time_s", "Experiment 2: Layout vs Latency", "Physical Layout", "avg_total_time_s (ms)", os.path.join(output_dir, "layout", "latency.png"), layout_order, True)
+    plot_grouped_bars(layout_avg, "layout", "avg_total_time_s", "Experiment 2: Layout vs Latency", "Physical Layout", "avg_total_time_ms", os.path.join(output_dir, "layout", "latency.png"), layout_order, True)
 
     ndv = add_ndv_sel_fields(df[df["suite"] == "ndv_selectivity"])
     ndv_avg = ndv.groupby(["ndv", "mode"], as_index=False)[["avg_vectors_processed", "avg_total_time_s"]].mean()
@@ -212,7 +206,7 @@ def try_pandas_matplotlib(summary_csv, output_dir):
     ndv_avg = ndv_avg.sort_values("ndv")
     ndv_order = ["low", "medium", "high"]
     plot_grouped_bars(ndv_avg, "ndv", "avg_vectors_processed", "Experiment 3: NDV vs Vectors Processed", "NDV Level", "avg_vectors_processed", os.path.join(output_dir, "ndv", "vectors_processed.png"), ndv_order)
-    plot_grouped_bars(ndv_avg, "ndv", "avg_total_time_s", "Experiment 3: NDV vs Latency", "NDV Level", "avg_total_time_s (ms)", os.path.join(output_dir, "ndv", "latency.png"), ndv_order, True)
+    plot_grouped_bars(ndv_avg, "ndv", "avg_total_time_s", "Experiment 3: NDV vs Latency", "NDV Level", "avg_total_time_ms", os.path.join(output_dir, "ndv", "latency.png"), ndv_order, True)
 
     dist = add_dist_fields(df[df["suite"] == "distribution_predicates"])
     dist_avg = dist.groupby(["distribution", "mode"], as_index=False)[["avg_vectors_processed", "avg_total_time_s"]].mean()
@@ -220,7 +214,7 @@ def try_pandas_matplotlib(summary_csv, output_dir):
     dist_avg = dist_avg.sort_values("distribution")
     dist_order = ["uniform", "hotspot"]
     plot_grouped_bars(dist_avg, "distribution", "avg_vectors_processed", "Experiment 4: Distribution vs Vectors Processed", "Distribution", "avg_vectors_processed", os.path.join(output_dir, "distribution", "vectors_processed.png"), dist_order)
-    plot_grouped_bars(dist_avg, "distribution", "avg_total_time_s", "Experiment 4: Distribution vs Latency", "Distribution", "avg_total_time_s (ms)", os.path.join(output_dir, "distribution", "latency.png"), dist_order, True)
+    plot_grouped_bars(dist_avg, "distribution", "avg_total_time_s", "Experiment 4: Distribution vs Latency", "Distribution", "avg_total_time_ms", os.path.join(output_dir, "distribution", "latency.png"), dist_order, True)
 
     pred = add_ndv_pred_fields(df[df["suite"] == "ndv_predicates"])
     pred_avg = pred.groupby(["predicate", "mode"], as_index=False)[["avg_vectors_processed", "avg_total_time_s"]].mean()
@@ -228,11 +222,11 @@ def try_pandas_matplotlib(summary_csv, output_dir):
     pred_avg = pred_avg.sort_values("predicate")
     pred_order = ["eq", "lt", "between", "conjunct"]
     plot_grouped_bars(pred_avg, "predicate", "avg_vectors_processed", "Experiment 5: Predicate Type vs Vectors Processed", "Predicate Type", "avg_vectors_processed", os.path.join(output_dir, "predicate", "vectors_processed.png"), pred_order)
-    plot_grouped_bars(pred_avg, "predicate", "avg_total_time_s", "Experiment 5: Predicate Type vs Latency", "Predicate Type", "avg_total_time_s (ms)", os.path.join(output_dir, "predicate", "latency.png"), pred_order, True)
+    plot_grouped_bars(pred_avg, "predicate", "avg_total_time_s", "Experiment 5: Predicate Type vs Latency", "Predicate Type", "avg_total_time_ms", os.path.join(output_dir, "predicate", "latency.png"), pred_order, True)
 
     focused = ndv[(ndv["ndv"] == "medium")].copy()
-    plot_lines(focused, "selectivity", "avg_vectors_processed", "Experiment 6: Medium-NDV Focused Segment Comparison", "Selectivity (%)", "avg_vectors_processed", os.path.join(output_dir, "focused", "vectors_processed.png"), [1.0, 5.0, 10.0, 20.0, 50.0, 90.0])
-    plot_lines(focused, "selectivity", "avg_total_time_s", "Experiment 6: Medium-NDV Focused Segment Latency", "Selectivity (%)", "avg_total_time_s (ms)", os.path.join(output_dir, "focused", "latency.png"), [1.0, 5.0, 10.0, 20.0, 50.0, 90.0], True)
+    plot_lines(focused, "selectivity", "avg_vectors_processed", "Experiment 6: Medium-NDV Focused Segment Comparison", "Selectivity (%)", "avg_vectors_processed", os.path.join(output_dir, "focused", "vectors_processed.png"), [0.0, 1.0, 5.0, 10.0, 20.0, 50.0, 90.0])
+    plot_lines(focused, "selectivity", "avg_total_time_s", "Experiment 6: Medium-NDV Focused Segment Latency", "Selectivity (%)", "avg_total_time_ms", os.path.join(output_dir, "focused", "latency.png"), [0.0, 1.0, 5.0, 10.0, 20.0, 50.0, 90.0], True)
 
 
 def read_rows(summary_csv):
@@ -275,21 +269,18 @@ def write_svg_plot(records, x_key, y_key, title, xlabel, ylabel, output_path, li
     left, right, top, bottom = 155, 70, 80, 155
     plot_w = width - left - right
     plot_h = height - top - bottom
-    x_values = list(dict.fromkeys(r[x_key] for r in records))
+    data_x_values = list(dict.fromkeys(r[x_key] for r in records))
+    x_values = list(data_x_values)
     if preferred_x:
-        x_values = [x for x in preferred_x if x in x_values]
+        x_values = [x for x in preferred_x if x in data_x_values or (line_plot and isinstance(x, (int, float)) and x == 0)]
     else:
         x_values = sorted(x_values, key=lambda x: (str(type(x)), x))
     scale = 1000.0 if latency else 1.0
     y_values = [r[y_key] * scale for r in records]
-    y_min = min(y_values + ([0.0] if not latency else []))
+    y_min = 0.0
     y_max = max(y_values + [1.0])
     if latency:
-        spread = y_max - y_min
-        lower_pad = max(y_min * 0.30, 0.05)
-        upper_pad = max(spread * 0.15, y_max * 0.03, 0.05)
-        y_min = max(0.0, y_min - lower_pad)
-        y_max = y_max + upper_pad
+        y_max = y_max * 1.08
     else:
         y_min = 0.0
         y_max *= 1.08
@@ -369,15 +360,15 @@ def fallback_svg(summary_csv, output_dir):
         row["selectivity"] = sel
         layout.append(row)
 
-    selectivity_order = [0.1, 1.0, 5.0, 10.0, 20.0, 50.0, 90.0]
+    selectivity_order = [0.0, 0.1, 1.0, 5.0, 10.0, 20.0, 50.0, 90.0]
     block = [r for r in layout if r["layout"] == "block_sorted"]
     write_svg_plot(block, "selectivity", "avg_vectors_processed", "Experiment 1: Selectivity vs Vectors Processed", "Selectivity (%)", "avg_vectors_processed", os.path.join(output_dir, "selectivity", "vectors_processed.svg"), True, selectivity_order)
-    write_svg_plot(block, "selectivity", "avg_total_time_s", "Experiment 1: Selectivity vs Latency", "Selectivity (%)", "avg_total_time_s (ms)", os.path.join(output_dir, "selectivity", "latency.svg"), True, selectivity_order, True)
+    write_svg_plot(block, "selectivity", "avg_total_time_s", "Experiment 1: Selectivity vs Latency", "Selectivity (%)", "avg_total_time_ms", os.path.join(output_dir, "selectivity", "latency.svg"), True, selectivity_order, True)
 
     layout_avg = mean_records(layout, ["layout", "mode"])
     layout_order = ["random", "sorted", "block_sorted"]
     write_svg_plot(layout_avg, "layout", "avg_vectors_processed", "Experiment 2: Layout vs Vectors Processed", "Physical Layout", "avg_vectors_processed", os.path.join(output_dir, "layout", "vectors_processed.svg"), False, layout_order)
-    write_svg_plot(layout_avg, "layout", "avg_total_time_s", "Experiment 2: Layout vs Latency", "Physical Layout", "avg_total_time_s (ms)", os.path.join(output_dir, "layout", "latency.svg"), False, layout_order, True)
+    write_svg_plot(layout_avg, "layout", "avg_total_time_s", "Experiment 2: Layout vs Latency", "Physical Layout", "avg_total_time_ms", os.path.join(output_dir, "layout", "latency.svg"), False, layout_order, True)
 
     ndv = []
     for row in rows:
@@ -393,7 +384,7 @@ def fallback_svg(summary_csv, output_dir):
     ndv_avg = mean_records(ndv, ["ndv", "mode"])
     ndv_order = ["low", "medium", "high"]
     write_svg_plot(ndv_avg, "ndv", "avg_vectors_processed", "Experiment 3: NDV vs Vectors Processed", "NDV Level", "avg_vectors_processed", os.path.join(output_dir, "ndv", "vectors_processed.svg"), False, ndv_order)
-    write_svg_plot(ndv_avg, "ndv", "avg_total_time_s", "Experiment 3: NDV vs Latency", "NDV Level", "avg_total_time_s (ms)", os.path.join(output_dir, "ndv", "latency.svg"), False, ndv_order, True)
+    write_svg_plot(ndv_avg, "ndv", "avg_total_time_s", "Experiment 3: NDV vs Latency", "NDV Level", "avg_total_time_ms", os.path.join(output_dir, "ndv", "latency.svg"), False, ndv_order, True)
 
     dist = []
     for row in rows:
@@ -410,7 +401,7 @@ def fallback_svg(summary_csv, output_dir):
     dist_avg = mean_records(dist, ["distribution", "mode"])
     dist_order = ["uniform", "hotspot"]
     write_svg_plot(dist_avg, "distribution", "avg_vectors_processed", "Experiment 4: Distribution vs Vectors Processed", "Distribution", "avg_vectors_processed", os.path.join(output_dir, "distribution", "vectors_processed.svg"), False, dist_order)
-    write_svg_plot(dist_avg, "distribution", "avg_total_time_s", "Experiment 4: Distribution vs Latency", "Distribution", "avg_total_time_s (ms)", os.path.join(output_dir, "distribution", "latency.svg"), False, dist_order, True)
+    write_svg_plot(dist_avg, "distribution", "avg_total_time_s", "Experiment 4: Distribution vs Latency", "Distribution", "avg_total_time_ms", os.path.join(output_dir, "distribution", "latency.svg"), False, dist_order, True)
 
     pred = []
     for row in rows:
@@ -426,12 +417,12 @@ def fallback_svg(summary_csv, output_dir):
     pred_avg = mean_records(pred, ["predicate", "mode"])
     pred_order = ["eq", "lt", "between", "conjunct"]
     write_svg_plot(pred_avg, "predicate", "avg_vectors_processed", "Experiment 5: Predicate Type vs Vectors Processed", "Predicate Type", "avg_vectors_processed", os.path.join(output_dir, "predicate", "vectors_processed.svg"), False, pred_order)
-    write_svg_plot(pred_avg, "predicate", "avg_total_time_s", "Experiment 5: Predicate Type vs Latency", "Predicate Type", "avg_total_time_s (ms)", os.path.join(output_dir, "predicate", "latency.svg"), False, pred_order, True)
+    write_svg_plot(pred_avg, "predicate", "avg_total_time_s", "Experiment 5: Predicate Type vs Latency", "Predicate Type", "avg_total_time_ms", os.path.join(output_dir, "predicate", "latency.svg"), False, pred_order, True)
 
     focused = [r for r in ndv if r["ndv"] == "medium"]
-    focused_order = [1.0, 5.0, 10.0, 20.0, 50.0, 90.0]
+    focused_order = [0.0, 1.0, 5.0, 10.0, 20.0, 50.0, 90.0]
     write_svg_plot(focused, "selectivity", "avg_vectors_processed", "Experiment 6: Medium-NDV Focused Segment Comparison", "Selectivity (%)", "avg_vectors_processed", os.path.join(output_dir, "focused", "vectors_processed.svg"), True, focused_order)
-    write_svg_plot(focused, "selectivity", "avg_total_time_s", "Experiment 6: Medium-NDV Focused Segment Latency", "Selectivity (%)", "avg_total_time_s (ms)", os.path.join(output_dir, "focused", "latency.svg"), True, focused_order, True)
+    write_svg_plot(focused, "selectivity", "avg_total_time_s", "Experiment 6: Medium-NDV Focused Segment Latency", "Selectivity (%)", "avg_total_time_ms", os.path.join(output_dir, "focused", "latency.svg"), True, focused_order, True)
 
 
 def main():

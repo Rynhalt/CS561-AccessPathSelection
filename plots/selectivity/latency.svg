@@ -3,43 +3,44 @@
 <text x="600.0" y="44" text-anchor="middle" font-family="Arial" font-size="30" font-weight="600">Experiment 1: Selectivity vs Latency</text>
 <line x1="155" y1="80" x2="155" y2="605" stroke="#333"/>
 <line x1="155" y1="605" x2="1130" y2="605" stroke="#333"/>
-<text x="34" y="342.5" transform="rotate(-90 34 342.5)" text-anchor="middle" font-family="Arial" font-size="24">avg_total_time_s (ms)</text>
+<text x="34" y="342.5" transform="rotate(-90 34 342.5)" text-anchor="middle" font-family="Arial" font-size="24">avg_total_time_ms</text>
 <text x="642.5" y="718" text-anchor="middle" font-family="Arial" font-size="24">Selectivity (%)</text>
 <line x1="155" y1="605.0" x2="1130" y2="605.0" stroke="#ddd"/>
-<text x="141" y="612.0" text-anchor="end" font-family="Arial" font-size="20">0.14</text>
+<text x="141" y="612.0" text-anchor="end" font-family="Arial" font-size="20">0.00</text>
 <line x1="155" y1="500.0" x2="1130" y2="500.0" stroke="#ddd"/>
-<text x="141" y="507.0" text-anchor="end" font-family="Arial" font-size="20">6.62</text>
+<text x="141" y="507.0" text-anchor="end" font-family="Arial" font-size="20">6.11</text>
 <line x1="155" y1="395.0" x2="1130" y2="395.0" stroke="#ddd"/>
-<text x="141" y="402.0" text-anchor="end" font-family="Arial" font-size="20">13.1</text>
+<text x="141" y="402.0" text-anchor="end" font-family="Arial" font-size="20">12.2</text>
 <line x1="155" y1="290.0" x2="1130" y2="290.0" stroke="#ddd"/>
-<text x="141" y="297.0" text-anchor="end" font-family="Arial" font-size="20">19.6</text>
+<text x="141" y="297.0" text-anchor="end" font-family="Arial" font-size="20">18.3</text>
 <line x1="155" y1="185.0" x2="1130" y2="185.0" stroke="#ddd"/>
-<text x="141" y="192.0" text-anchor="end" font-family="Arial" font-size="20">26.0</text>
+<text x="141" y="192.0" text-anchor="end" font-family="Arial" font-size="20">24.5</text>
 <line x1="155" y1="80.0" x2="1130" y2="80.0" stroke="#ddd"/>
-<text x="141" y="87.0" text-anchor="end" font-family="Arial" font-size="20">32.5</text>
-<text x="155.0" y="651" text-anchor="middle" font-family="Arial" font-size="20">0.1</text>
-<text x="317.5" y="651" text-anchor="middle" font-family="Arial" font-size="20">1.0</text>
-<text x="480.0" y="651" text-anchor="middle" font-family="Arial" font-size="20">5.0</text>
-<text x="642.5" y="651" text-anchor="middle" font-family="Arial" font-size="20">10.0</text>
-<text x="805.0" y="651" text-anchor="middle" font-family="Arial" font-size="20">20.0</text>
-<text x="967.5" y="651" text-anchor="middle" font-family="Arial" font-size="20">50.0</text>
+<text x="141" y="87.0" text-anchor="end" font-family="Arial" font-size="20">30.6</text>
+<text x="155.0" y="651" text-anchor="middle" font-family="Arial" font-size="20">0.0</text>
+<text x="294.3" y="651" text-anchor="middle" font-family="Arial" font-size="20">0.1</text>
+<text x="433.6" y="651" text-anchor="middle" font-family="Arial" font-size="20">1.0</text>
+<text x="572.9" y="651" text-anchor="middle" font-family="Arial" font-size="20">5.0</text>
+<text x="712.1" y="651" text-anchor="middle" font-family="Arial" font-size="20">10.0</text>
+<text x="851.4" y="651" text-anchor="middle" font-family="Arial" font-size="20">20.0</text>
+<text x="990.7" y="651" text-anchor="middle" font-family="Arial" font-size="20">50.0</text>
 <text x="1130.0" y="651" text-anchor="middle" font-family="Arial" font-size="20">90.0</text>
-<polyline points="155.0,599.2 317.5,600.3 480.0,573.7 642.5,548.7 805.0,497.8 967.5,360.1 1130.0,148.4" fill="none" stroke="#e67e22" stroke-width="4"/>
-<circle cx="155.0" cy="599.2" r="6" fill="#e67e22"/>
-<circle cx="317.5" cy="600.3" r="6" fill="#e67e22"/>
-<circle cx="480.0" cy="573.7" r="6" fill="#e67e22"/>
-<circle cx="642.5" cy="548.7" r="6" fill="#e67e22"/>
-<circle cx="805.0" cy="497.8" r="6" fill="#e67e22"/>
-<circle cx="967.5" cy="360.1" r="6" fill="#e67e22"/>
-<circle cx="1130.0" cy="148.4" r="6" fill="#e67e22"/>
-<polyline points="155.0,604.0 317.5,600.5 480.0,580.8 642.5,558.3 805.0,495.3 967.5,308.7 1130.0,593.8" fill="none" stroke="#2ca02c" stroke-width="4"/>
-<circle cx="155.0" cy="604.0" r="6" fill="#2ca02c"/>
-<circle cx="317.5" cy="600.5" r="6" fill="#2ca02c"/>
-<circle cx="480.0" cy="580.8" r="6" fill="#2ca02c"/>
-<circle cx="642.5" cy="558.3" r="6" fill="#2ca02c"/>
-<circle cx="805.0" cy="495.3" r="6" fill="#2ca02c"/>
-<circle cx="967.5" cy="308.7" r="6" fill="#2ca02c"/>
-<circle cx="1130.0" cy="593.8" r="6" fill="#2ca02c"/>
+<polyline points="294.3,596.4 433.6,597.6 572.9,569.5 712.1,543.0 851.4,489.1 990.7,343.1 1130.0,118.9" fill="none" stroke="#e67e22" stroke-width="4"/>
+<circle cx="294.3" cy="596.4" r="6" fill="#e67e22"/>
+<circle cx="433.6" cy="597.6" r="6" fill="#e67e22"/>
+<circle cx="572.9" cy="569.5" r="6" fill="#e67e22"/>
+<circle cx="712.1" cy="543.0" r="6" fill="#e67e22"/>
+<circle cx="851.4" cy="489.1" r="6" fill="#e67e22"/>
+<circle cx="990.7" cy="343.1" r="6" fill="#e67e22"/>
+<circle cx="1130.0" cy="118.9" r="6" fill="#e67e22"/>
+<polyline points="294.3,601.6 433.6,597.8 572.9,577.0 712.1,553.1 851.4,486.3 990.7,288.7 1130.0,590.7" fill="none" stroke="#2ca02c" stroke-width="4"/>
+<circle cx="294.3" cy="601.6" r="6" fill="#2ca02c"/>
+<circle cx="433.6" cy="597.8" r="6" fill="#2ca02c"/>
+<circle cx="572.9" cy="577.0" r="6" fill="#2ca02c"/>
+<circle cx="712.1" cy="553.1" r="6" fill="#2ca02c"/>
+<circle cx="851.4" cy="486.3" r="6" fill="#2ca02c"/>
+<circle cx="990.7" cy="288.7" r="6" fill="#2ca02c"/>
+<circle cx="1130.0" cy="590.7" r="6" fill="#2ca02c"/>
 <rect x="800" y="94" width="24" height="24" fill="#e67e22"/>
 <text x="834" y="116" font-family="Arial" font-size="22">Segment Zonemap</text>
 <rect x="800" y="132" width="24" height="24" fill="#2ca02c"/>

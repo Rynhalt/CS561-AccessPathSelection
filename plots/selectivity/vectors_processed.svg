@@ -17,28 +17,29 @@
 <text x="141" y="192.0" text-anchor="end" font-family="Arial" font-size="20">3,836</text>
 <line x1="155" y1="80.0" x2="1130" y2="80.0" stroke="#ddd"/>
 <text x="141" y="87.0" text-anchor="end" font-family="Arial" font-size="20">4,795</text>
-<text x="155.0" y="651" text-anchor="middle" font-family="Arial" font-size="20">0.1</text>
-<text x="317.5" y="651" text-anchor="middle" font-family="Arial" font-size="20">1.0</text>
-<text x="480.0" y="651" text-anchor="middle" font-family="Arial" font-size="20">5.0</text>
-<text x="642.5" y="651" text-anchor="middle" font-family="Arial" font-size="20">10.0</text>
-<text x="805.0" y="651" text-anchor="middle" font-family="Arial" font-size="20">20.0</text>
-<text x="967.5" y="651" text-anchor="middle" font-family="Arial" font-size="20">50.0</text>
+<text x="155.0" y="651" text-anchor="middle" font-family="Arial" font-size="20">0.0</text>
+<text x="294.3" y="651" text-anchor="middle" font-family="Arial" font-size="20">0.1</text>
+<text x="433.6" y="651" text-anchor="middle" font-family="Arial" font-size="20">1.0</text>
+<text x="572.9" y="651" text-anchor="middle" font-family="Arial" font-size="20">5.0</text>
+<text x="712.1" y="651" text-anchor="middle" font-family="Arial" font-size="20">10.0</text>
+<text x="851.4" y="651" text-anchor="middle" font-family="Arial" font-size="20">20.0</text>
+<text x="990.7" y="651" text-anchor="middle" font-family="Arial" font-size="20">50.0</text>
 <text x="1130.0" y="651" text-anchor="middle" font-family="Arial" font-size="20">90.0</text>
-<polyline points="155.0,598.4 317.5,598.4 480.0,572.2 642.5,545.9 805.0,493.3 967.5,335.7 1130.0,118.9" fill="none" stroke="#e67e22" stroke-width="4"/>
-<circle cx="155.0" cy="598.4" r="6" fill="#e67e22"/>
-<circle cx="317.5" cy="598.4" r="6" fill="#e67e22"/>
-<circle cx="480.0" cy="572.2" r="6" fill="#e67e22"/>
-<circle cx="642.5" cy="545.9" r="6" fill="#e67e22"/>
-<circle cx="805.0" cy="493.3" r="6" fill="#e67e22"/>
-<circle cx="967.5" cy="335.7" r="6" fill="#e67e22"/>
+<polyline points="294.3,598.4 433.6,598.4 572.9,572.2 712.1,545.9 851.4,493.3 990.7,335.7 1130.0,118.9" fill="none" stroke="#e67e22" stroke-width="4"/>
+<circle cx="294.3" cy="598.4" r="6" fill="#e67e22"/>
+<circle cx="433.6" cy="598.4" r="6" fill="#e67e22"/>
+<circle cx="572.9" cy="572.2" r="6" fill="#e67e22"/>
+<circle cx="712.1" cy="545.9" r="6" fill="#e67e22"/>
+<circle cx="851.4" cy="493.3" r="6" fill="#e67e22"/>
+<circle cx="990.7" cy="335.7" r="6" fill="#e67e22"/>
 <circle cx="1130.0" cy="118.9" r="6" fill="#e67e22"/>
-<polyline points="155.0,604.3 317.5,599.5 480.0,578.2 642.5,551.5 805.0,498.0 967.5,337.6 1130.0,605.0" fill="none" stroke="#2ca02c" stroke-width="4"/>
-<circle cx="155.0" cy="604.3" r="6" fill="#2ca02c"/>
-<circle cx="317.5" cy="599.5" r="6" fill="#2ca02c"/>
-<circle cx="480.0" cy="578.2" r="6" fill="#2ca02c"/>
-<circle cx="642.5" cy="551.5" r="6" fill="#2ca02c"/>
-<circle cx="805.0" cy="498.0" r="6" fill="#2ca02c"/>
-<circle cx="967.5" cy="337.6" r="6" fill="#2ca02c"/>
+<polyline points="294.3,604.3 433.6,599.5 572.9,578.2 712.1,551.5 851.4,498.0 990.7,337.6 1130.0,605.0" fill="none" stroke="#2ca02c" stroke-width="4"/>
+<circle cx="294.3" cy="604.3" r="6" fill="#2ca02c"/>
+<circle cx="433.6" cy="599.5" r="6" fill="#2ca02c"/>
+<circle cx="572.9" cy="578.2" r="6" fill="#2ca02c"/>
+<circle cx="712.1" cy="551.5" r="6" fill="#2ca02c"/>
+<circle cx="851.4" cy="498.0" r="6" fill="#2ca02c"/>
+<circle cx="990.7" cy="337.6" r="6" fill="#2ca02c"/>
 <circle cx="1130.0" cy="605.0" r="6" fill="#2ca02c"/>
 <rect x="800" y="94" width="24" height="24" fill="#e67e22"/>
 <text x="834" y="116" font-family="Arial" font-size="22">Segment Zonemap</text>

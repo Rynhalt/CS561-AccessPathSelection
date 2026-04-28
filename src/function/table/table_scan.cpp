@@ -82,6 +82,7 @@ static unique_ptr<LocalTableFunctionState> TableScanInitLocal(ExecutionContext &
 	result->scan_state.options.disable_sketch = client_config.disable_sketch;
 	result->scan_state.options.disable_zonemap = client_config.disable_zonemap;
 	result->scan_state.options.disable_segment_zonemap = client_config.disable_segment_zonemap;
+	result->scan_state.options.disable_rabit = client_config.disable_rabit;
 	TableScanParallelStateNext(context.client, input.bind_data.get(), result.get(), gstate);
 	if (input.CanRemoveFilterColumns()) {
 		auto &tsgs = gstate->Cast<TableScanGlobalState>();
@@ -133,6 +134,7 @@ static void TableScanFunc(ClientContext &context, TableFunctionInput &data_p, Da
 	state.scan_state.options.disable_sketch = client_config.disable_sketch;
 	state.scan_state.options.disable_zonemap = client_config.disable_zonemap;
 	state.scan_state.options.disable_segment_zonemap = client_config.disable_segment_zonemap;
+	state.scan_state.options.disable_rabit = client_config.disable_rabit;
 	do {
 		if (bind_data.is_create_index) {
 			storage.CreateIndexScan(state.scan_state, output,
@@ -368,6 +370,9 @@ string TableScanToString(const FunctionData *bind_data_p) {
 		result += "\n";
 		result += StringUtil::Format("segments_pruned_by_sketch: %llu",
 		                             bind_data.scan_metrics->segments_pruned_by_sketch.load());
+		result += "\n";
+		result += StringUtil::Format("segments_pruned_by_rabit: %llu",
+		                             bind_data.scan_metrics->segments_pruned_by_rabit.load());
 		result += "\n";
 		result += StringUtil::Format("vectors_processed: %llu", bind_data.scan_metrics->vectors_processed.load());
 	}

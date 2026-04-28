@@ -85,6 +85,8 @@ struct ClientConfig {
 	bool disable_zonemap = false;
 	//! Disable segment-level zonemap predicate pruning for table scans
 	bool disable_segment_zonemap = false;
+	//! Disable RABIT GE predicate pruning for table scans. Enabled only for explicit experiments.
+	bool disable_rabit = true;
 	//! Use range joins for inequalities, even if there are equality predicates
 	bool prefer_range_joins = false;
 	//! If this context should also try to use the available replacement scans

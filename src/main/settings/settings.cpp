@@ -284,6 +284,21 @@ Value DisableSegmentZonemapSetting::GetSetting(const ClientContext &context) {
 }
 
 //===--------------------------------------------------------------------===//
+// Disable RABIT
+//===--------------------------------------------------------------------===//
+void DisableRabitSetting::ResetLocal(ClientContext &context) {
+	ClientConfig::GetConfig(context).disable_rabit = ClientConfig().disable_rabit;
+}
+
+void DisableRabitSetting::SetLocal(ClientContext &context, const Value &input) {
+	ClientConfig::GetConfig(context).disable_rabit = input.GetValue<bool>();
+}
+
+Value DisableRabitSetting::GetSetting(const ClientContext &context) {
+	return Value::BOOLEAN(ClientConfig::GetConfig(context).disable_rabit);
+}
+
+//===--------------------------------------------------------------------===//
 // Default Collation
 //===--------------------------------------------------------------------===//
 void DefaultCollationSetting::SetGlobal(DatabaseInstance *db, DBConfig &config, const Value &input) {

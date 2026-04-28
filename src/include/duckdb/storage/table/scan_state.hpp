@@ -153,17 +153,20 @@ struct TableScanOptions {
 	bool disable_zonemap = false;
 	//! Disable segment-level zonemap predicate pruning
 	bool disable_segment_zonemap = false;
+	//! Disable RABIT GE segment-level predicate pruning
+	bool disable_rabit = true;
 };
 
 struct TableScanMetrics {
 	atomic<idx_t> row_groups_pruned_by_zonemap;
 	atomic<idx_t> segments_pruned_by_zonemap;
 	atomic<idx_t> segments_pruned_by_sketch;
+	atomic<idx_t> segments_pruned_by_rabit;
 	atomic<idx_t> vectors_processed;
 
 	TableScanMetrics()
 	    : row_groups_pruned_by_zonemap(0), segments_pruned_by_zonemap(0), segments_pruned_by_sketch(0),
-	      vectors_processed(0) {
+	      segments_pruned_by_rabit(0), vectors_processed(0) {
 	}
 };
 

@@ -67,6 +67,7 @@ static const ConfigurationOption internal_options[] = {
     DUCKDB_LOCAL(DisableSketchSetting),
     DUCKDB_LOCAL(DisableZonemapSetting),
     DUCKDB_LOCAL(DisableSegmentZonemapSetting),
+    DUCKDB_LOCAL(DisableRabitSetting),
     DUCKDB_GLOBAL(DebugWindowMode),
     DUCKDB_GLOBAL_LOCAL(DefaultCollationSetting),
     DUCKDB_GLOBAL(DefaultOrderSetting),

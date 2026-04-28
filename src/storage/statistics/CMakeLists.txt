@@ -8,6 +8,7 @@ add_library_unity(
   list_stats.cpp
   numeric_stats.cpp
   numeric_stats_union.cpp
+  rabit_index.cpp
   segment_statistics.cpp
   string_stats.cpp
   struct_stats.cpp)

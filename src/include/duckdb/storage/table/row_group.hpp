@@ -108,6 +108,7 @@ public:
 	//! skipped.
 	bool CheckZonemapSegments(CollectionScanState &state);
 	bool CheckSketchSegments(CollectionScanState &state);
+	bool CheckRabitSegments(CollectionScanState &state);
 	void Scan(TransactionData transaction, CollectionScanState &state, DataChunk &result);
 	void ScanCommitted(CollectionScanState &state, DataChunk &result, TableScanType type);
 

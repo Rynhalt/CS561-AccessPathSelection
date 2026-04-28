@@ -365,3 +365,7 @@ extension_external
 # pyodide (emscripten python) build and test environment
 .pyodide-xbuildenv
 .venv-pyodide
+
+RABIT.txt
+RABIT_GE_PROTOTYPE.md
+final_report_codebase_summary.md

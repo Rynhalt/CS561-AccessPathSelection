@@ -301,7 +301,19 @@ Caveat: the current cumulative `experiments/results/explain_metrics_summary.csv`
 
 ### Original Issue
 
-Early experiments suggested sketches might not be running or not helping. The final code indicates why this could happen:
+Early experiments suggested sketches might not be running or not helping. The root cause was that the BU DISC lab implementation we started from did not make column sketches generally available for arbitrary synthetic tables and columns. Sketches were effectively available for the TPC-H `lineitem` table and only a subset of columns:
+
+```text
+l_quantity
+l_extendedprice
+l_discount
+l_tax
+l_shipdate
+```
+
+Queries involving other tables or other filter columns would not have sketch metadata available and would therefore fall back to zonemap-based pruning. This made early experiments misleading: a query could be run in a nominal "sketch" configuration while the scan path was not actually using sketch pruning for the predicate column.
+
+The final scan code also shows the runtime condition that caused this fallback:
 
 - Sketch pruning is only selected if `can_sketch` remains true in `RowGroup::TemplatedScan`.
 - `can_sketch` requires table filters to exist and every filtered column to satisfy `col_data.is_sketched`.

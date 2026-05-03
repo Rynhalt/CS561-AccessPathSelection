@@ -1,0 +1,9 @@
+suite,query_name,mode,disable_zonemap,disable_segment_zonemap,disable_sketch,disable_rabit,runs,avg_total_time_s,avg_row_groups_pruned_by_zonemap,avg_segments_pruned_by_zonemap,avg_segments_pruned_by_sketch,avg_segments_pruned_by_rabit,avg_vectors_processed
+distribution_predicates,hotspot_between_hotspot_band,rowgroup_plus_rabit,false,true,true,false,10,0.048020,0.000000,0.000000,0.000000,0.000000,4883.000000
+distribution_predicates,hotspot_between_nonhotspot_band,rowgroup_plus_rabit,false,true,true,false,10,0.002360,31.000000,0.000000,0.000000,3002.000000,58.000000
+distribution_predicates,hotspot_eq_hotspot_value,rowgroup_plus_rabit,false,true,true,false,10,0.009090,0.000000,0.000000,0.000000,3883.000000,1018.000000
+distribution_predicates,hotspot_eq_nonhotspot_value,rowgroup_plus_rabit,false,true,true,false,10,0.001540,31.000000,0.000000,0.000000,3060.000000,0.000000
+distribution_predicates,uniform_between_hotspot_band,rowgroup_plus_rabit,false,true,true,false,10,0.001600,71.000000,0.000000,0.000000,601.000000,59.000000
+distribution_predicates,uniform_between_nonhotspot_band,rowgroup_plus_rabit,false,true,true,false,10,0.002130,63.000000,0.000000,0.000000,1081.000000,59.000000
+distribution_predicates,uniform_eq_hotspot_value,rowgroup_plus_rabit,false,true,true,false,10,0.000500,71.000000,0.000000,0.000000,650.000000,10.000000
+distribution_predicates,uniform_eq_nonhotspot_value,rowgroup_plus_rabit,false,true,true,false,10,0.000880,63.000000,0.000000,0.000000,1130.000000,10.000000

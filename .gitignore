@@ -223,6 +223,7 @@ io_file
 # experiments/results tracked explicitly, but do not commit per-query chunks or
 # smoke/repro/probe artifacts.
 experiments/results/chunks/
+experiments/results/chunks_rabit/
 experiments/results/repro_chunks/
 experiments/results/repro_skip_chunks/
 experiments/results/explain_metrics_failures.csv
@@ -233,6 +234,9 @@ experiments/results/segment_zm_smoke_*.csv
 experiments/results/segment_zm_smoke_chunks/
 experiments/results/test_workflow_*.csv
 experiments/results/thread_smoke_*.csv
+
+# Generated report plots are intentionally tracked when needed for the final
+# report/presentation. Do not ignore plots/ or plots_with_rabit/.
 
 # Compiled Object files
 *.slo

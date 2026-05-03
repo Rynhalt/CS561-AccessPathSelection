@@ -1,0 +1,13 @@
+suite,query_name,mode,disable_zonemap,disable_segment_zonemap,disable_sketch,disable_rabit,runs,avg_total_time_s,avg_row_groups_pruned_by_zonemap,avg_segments_pruned_by_zonemap,avg_segments_pruned_by_sketch,avg_segments_pruned_by_rabit,avg_vectors_processed
+ndv_predicates,high_between,rowgroup_plus_rabit,false,true,true,false,10,0.003210,59.000000,0.000000,0.000000,1126.000000,254.000000
+ndv_predicates,high_conjunct,rowgroup_plus_rabit,false,true,true,false,10,0.022650,59.000000,0.000000,0.000000,0.000000,1380.000000
+ndv_predicates,high_eq,rowgroup_plus_rabit,false,true,true,false,10,0.000710,63.000000,0.000000,0.000000,1130.000000,10.000000
+ndv_predicates,high_lt,rowgroup_plus_rabit,false,true,true,false,10,0.008590,57.000000,0.000000,0.000000,514.000000,986.000000
+ndv_predicates,low_between,rowgroup_plus_rabit,false,true,true,false,10,0.042860,0.000000,0.000000,0.000000,0.000000,4883.000000
+ndv_predicates,low_conjunct,rowgroup_plus_rabit,false,true,true,false,10,0.053620,0.000000,0.000000,0.000000,0.000000,4883.000000
+ndv_predicates,low_eq,rowgroup_plus_rabit,false,true,true,false,10,0.029430,0.000000,0.000000,0.000000,0.000000,4883.000000
+ndv_predicates,low_lt,rowgroup_plus_rabit,false,true,true,false,10,0.036570,0.000000,0.000000,0.000000,0.000000,4883.000000
+ndv_predicates,medium_between,rowgroup_plus_rabit,false,true,true,false,10,0.012670,0.000000,0.000000,0.000000,3641.000000,1243.000000
+ndv_predicates,medium_conjunct,rowgroup_plus_rabit,false,true,true,false,10,0.042450,0.000000,0.000000,0.000000,0.000000,4883.000000
+ndv_predicates,medium_eq,rowgroup_plus_rabit,false,true,true,false,10,0.007570,0.000000,0.000000,0.000000,3883.000000,1001.000000
+ndv_predicates,medium_lt,rowgroup_plus_rabit,false,true,true,false,10,0.017910,0.000000,0.000000,0.000000,2915.000000,1969.000000

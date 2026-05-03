@@ -61,14 +61,11 @@ SUITES = {
 
 
 FLAG_MODES = {
-    "full": (False, False, False),
-    "zonemap_only": (False, False, True),
-    "segment_zonemap_only": (True, False, True),
-    "sketch_only": (True, True, False),
-    "none": (True, True, True),
-    "rowgroup_only": (False, True, True),
-    "rowgroup_plus_segment_zonemap": (False, False, True),
-    "rowgroup_plus_sketch": (False, True, False),
+    # Row-group zonemap remains enabled in all final modes. The mode name only
+    # changes the segment-level access path used after a row group survives.
+    "rowgroup_plus_segment_zonemap": (False, False, True, True),
+    "rowgroup_plus_sketch": (False, True, False, True),
+    "rowgroup_plus_rabit": (False, True, True, False),
 }
 
 
@@ -169,14 +166,16 @@ def query_sqls_for_suite(suite, selected_queries=None):
     return queries
 
 
-def set_flags_sql(disable_zonemap, disable_segment_zonemap, disable_sketch):
+def set_flags_sql(disable_zonemap, disable_segment_zonemap, disable_sketch, disable_rabit):
     zonemap = "true" if disable_zonemap else "false"
     segment_zonemap = "true" if disable_segment_zonemap else "false"
     sketch = "true" if disable_sketch else "false"
+    rabit = "true" if disable_rabit else "false"
     return (
         f"SET disable_zonemap={zonemap};\n"
         f"SET disable_segment_zonemap={segment_zonemap};\n"
-        f"SET disable_sketch={sketch};"
+        f"SET disable_sketch={sketch};\n"
+        f"SET disable_rabit={rabit};"
     )
 
 
@@ -193,8 +192,8 @@ def run_suite(
     queries = query_sqls_for_suite(suite, selected_queries=selected_queries)
     setup_sql = build_setup_sql(suite)
     for mode_name in mode_names:
-        disable_zonemap, disable_segment_zonemap, disable_sketch = FLAG_MODES[mode_name]
-        flags_sql = set_flags_sql(disable_zonemap, disable_segment_zonemap, disable_sketch)
+        disable_zonemap, disable_segment_zonemap, disable_sketch, disable_rabit = FLAG_MODES[mode_name]
+        flags_sql = set_flags_sql(disable_zonemap, disable_segment_zonemap, disable_sketch, disable_rabit)
         sql_parts = [setup_sql]
         query_contexts = []
         for run_index in range(1, repetitions + 1):
@@ -202,14 +201,30 @@ def run_suite(
                 sql_parts.append(flags_sql)
                 sql_parts.append(query_sql)
                 query_contexts.append(
-                    (query_name, disable_zonemap, disable_segment_zonemap, disable_sketch, mode_name, run_index)
+                    (
+                        query_name,
+                        disable_zonemap,
+                        disable_segment_zonemap,
+                        disable_sketch,
+                        disable_rabit,
+                        mode_name,
+                        run_index,
+                    )
                 )
 
         output = run_duckdb(duckdb_bin, db_path, "\n\n".join(sql_parts) + "\n", threads)
         explain_outputs = split_explain_outputs(output, len(query_contexts))
 
         for output, context in zip(explain_outputs, query_contexts):
-            query_name, disable_zonemap, disable_segment_zonemap, disable_sketch, mode_name, run_index = context
+            (
+                query_name,
+                disable_zonemap,
+                disable_segment_zonemap,
+                disable_sketch,
+                disable_rabit,
+                mode_name,
+                run_index,
+            ) = context
             results.append(
                 {
                     "suite": suite.name,
@@ -217,12 +232,14 @@ def run_suite(
                     "disable_zonemap": str(disable_zonemap).lower(),
                     "disable_segment_zonemap": str(disable_segment_zonemap).lower(),
                     "disable_sketch": str(disable_sketch).lower(),
+                    "disable_rabit": str(disable_rabit).lower(),
                     "mode": mode_name,
                     "run": str(run_index),
                     "total_time_s": parse_total_time(output) or "",
                     "row_groups_pruned_by_zonemap": parse_metric(output, "row_groups_pruned_by_zonemap") or "",
                     "segments_pruned_by_zonemap": parse_metric(output, "segments_pruned_by_zonemap") or "",
                     "segments_pruned_by_sketch": parse_metric(output, "segments_pruned_by_sketch") or "",
+                    "segments_pruned_by_rabit": parse_metric(output, "segments_pruned_by_rabit") or "",
                     "vectors_processed": parse_metric(output, "vectors_processed") or "",
                 }
             )
@@ -247,6 +264,7 @@ def compute_averages(rows):
             row["disable_zonemap"],
             row["disable_segment_zonemap"],
             row["disable_sketch"],
+            row["disable_rabit"],
         )
         grouped[key].append(row)
 
@@ -256,10 +274,11 @@ def compute_averages(rows):
         "row_groups_pruned_by_zonemap",
         "segments_pruned_by_zonemap",
         "segments_pruned_by_sketch",
+        "segments_pruned_by_rabit",
         "vectors_processed",
     ]
     for key, group_rows in sorted(grouped.items()):
-        suite, query_name, mode, disable_zonemap, disable_segment_zonemap, disable_sketch = key
+        suite, query_name, mode, disable_zonemap, disable_segment_zonemap, disable_sketch, disable_rabit = key
         average_row = {
             "suite": suite,
             "query_name": query_name,
@@ -267,6 +286,7 @@ def compute_averages(rows):
             "disable_zonemap": disable_zonemap,
             "disable_segment_zonemap": disable_segment_zonemap,
             "disable_sketch": disable_sketch,
+            "disable_rabit": disable_rabit,
             "runs": str(len(group_rows)),
         }
         for field in numeric_fields:
@@ -363,12 +383,14 @@ def main():
         "disable_zonemap",
         "disable_segment_zonemap",
         "disable_sketch",
+        "disable_rabit",
         "mode",
         "run",
         "total_time_s",
         "row_groups_pruned_by_zonemap",
         "segments_pruned_by_zonemap",
         "segments_pruned_by_sketch",
+        "segments_pruned_by_rabit",
         "vectors_processed",
     ]
     summary_rows = compute_averages(rows)
@@ -379,11 +401,13 @@ def main():
         "disable_zonemap",
         "disable_segment_zonemap",
         "disable_sketch",
+        "disable_rabit",
         "runs",
         "avg_total_time_s",
         "avg_row_groups_pruned_by_zonemap",
         "avg_segments_pruned_by_zonemap",
         "avg_segments_pruned_by_sketch",
+        "avg_segments_pruned_by_rabit",
         "avg_vectors_processed",
     ]
     write_csv(args.output, per_run_fieldnames, rows)

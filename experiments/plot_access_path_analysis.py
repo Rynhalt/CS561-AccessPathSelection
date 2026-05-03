@@ -14,16 +14,19 @@ from collections import defaultdict
 
 ZONEMAP_MODE = "rowgroup_plus_segment_zonemap"
 SKETCH_MODE = "rowgroup_plus_sketch"
-MODES = (ZONEMAP_MODE, SKETCH_MODE)
+RABIT_MODE = "rowgroup_plus_rabit"
+MODES = (ZONEMAP_MODE, SKETCH_MODE, RABIT_MODE)
 
 LABELS = {
     ZONEMAP_MODE: "Segment Zonemap",
     SKETCH_MODE: "Column Sketch",
+    RABIT_MODE: "RABIT GE",
 }
 
 COLORS = {
     ZONEMAP_MODE: "#e67e22",  # orange
     SKETCH_MODE: "#2ca02c",   # green
+    RABIT_MODE: "#1f77b4",     # blue
 }
 
 
@@ -71,12 +74,12 @@ def ensure_dirs(output_dir):
         os.makedirs(os.path.join(output_dir, subdir), exist_ok=True)
 
 
-def try_pandas_matplotlib(summary_csv, output_dir):
+def try_pandas_matplotlib(summary_csvs, output_dir):
     import pandas as pd
     import matplotlib.pyplot as plt
 
     ensure_dirs(output_dir)
-    df = pd.read_csv(summary_csv)
+    df = pd.concat([pd.read_csv(path) for path in summary_csvs], ignore_index=True)
     df = df[df["mode"].isin(MODES)].copy()
 
     def add_layout_fields(frame):
@@ -127,6 +130,8 @@ def try_pandas_matplotlib(summary_csv, output_dir):
             data[plot_y_col] = data[y_col] * 1000.0
         for mode in MODES:
             sub = data[data["mode"] == mode].copy()
+            if sub.empty:
+                continue
             if numeric_x:
                 sub["_xpos"] = sub[x_col]
             else:
@@ -167,11 +172,16 @@ def try_pandas_matplotlib(summary_csv, output_dir):
             data = data.copy()
             plot_y_col = "_latency_ms"
             data[plot_y_col] = data[y_col] * 1000.0
-        width = 0.36
+        active_modes = [mode for mode in MODES if not data[data["mode"] == mode].empty]
+        width = min(0.24, 0.78 / max(1, len(active_modes)))
         for mode_index, mode in enumerate(MODES):
             sub = data[data["mode"] == mode].set_index(x_col)
-            ys = [sub.loc[x, plot_y_col] for x in x_values]
-            xs = [i + (-width / 2 if mode_index == 0 else width / 2) for i in range(len(x_values))]
+            if sub.empty:
+                continue
+            active_index = active_modes.index(mode)
+            offset = (active_index - (len(active_modes) - 1) / 2.0) * width
+            ys = [sub.loc[x, plot_y_col] if x in sub.index else 0 for x in x_values]
+            xs = [i + offset for i in range(len(x_values))]
             ax.bar(xs, ys, width=width, label=normalize_mode_label(mode), color=COLORS[mode])
         ax.set_title(title, fontsize=22)
         ax.set_xlabel(xlabel, fontsize=19, labelpad=14)
@@ -229,17 +239,18 @@ def try_pandas_matplotlib(summary_csv, output_dir):
     plot_lines(focused, "selectivity", "avg_total_time_s", "Experiment 6: Medium-NDV Focused Segment Latency", "Selectivity (%)", "avg_total_time_ms", os.path.join(output_dir, "focused", "latency.png"), [0.0, 1.0, 5.0, 10.0, 20.0, 50.0, 90.0], True)
 
 
-def read_rows(summary_csv):
-    with open(summary_csv, newline="") as f:
-        rows = list(csv.DictReader(f))
+def read_rows(summary_csvs):
     cleaned = []
-    for row in rows:
-        if row["mode"] not in MODES:
-            continue
-        for col in ("avg_total_time_s", "avg_vectors_processed"):
-            row[col] = float(row[col])
-        row["runs"] = int(float(row["runs"]))
-        cleaned.append(row)
+    for summary_csv in summary_csvs:
+        with open(summary_csv, newline="") as f:
+            rows = list(csv.DictReader(f))
+        for row in rows:
+            if row["mode"] not in MODES:
+                continue
+            for col in ("avg_total_time_s", "avg_vectors_processed"):
+                row[col] = float(row[col])
+            row["runs"] = int(float(row["runs"]))
+            cleaned.append(row)
     return cleaned
 
 
@@ -317,8 +328,11 @@ def write_svg_plot(records, x_key, y_key, title, xlabel, ylabel, output_path, li
         px = x_pos(x)
         parts.append(f'<text x="{px:.1f}" y="{top+plot_h+46}" text-anchor="middle" font-family="Arial" font-size="20">{x}</text>')
 
+    active_modes = [mode for mode in MODES if any(r["mode"] == mode for r in records)]
     for mode_index, mode in enumerate(MODES):
         sub = [r for r in records if r["mode"] == mode]
+        if not sub:
+            continue
         sub.sort(key=lambda r: x_values.index(r[x_key]))
         if line_plot:
             points = " ".join(f'{x_pos(r[x_key], mode_index):.1f},{y_pos(r[y_key] * scale):.1f}' for r in sub)
@@ -326,15 +340,16 @@ def write_svg_plot(records, x_key, y_key, title, xlabel, ylabel, output_path, li
             for r in sub:
                 parts.append(f'<circle cx="{x_pos(r[x_key], mode_index):.1f}" cy="{y_pos(r[y_key] * scale):.1f}" r="6" fill="{COLORS[mode]}"/>')
         else:
-            bar_w = min(95, plot_w / max(1, len(x_values)) * 0.26)
-            offset = -bar_w * 0.58 if mode_index == 0 else bar_w * 0.58
+            bar_w = min(70, plot_w / max(1, len(x_values)) * 0.22)
+            active_index = active_modes.index(mode)
+            offset = (active_index - (len(active_modes) - 1) / 2.0) * bar_w * 1.12
             for r in sub:
                 cx = x_pos(r[x_key], mode_index) + offset
                 py = y_pos(r[y_key] * scale)
                 parts.append(f'<rect x="{cx - bar_w / 2:.1f}" y="{py:.1f}" width="{bar_w:.1f}" height="{top + plot_h - py:.1f}" fill="{COLORS[mode]}"/>')
 
     legend_x = left + plot_w - 330
-    for i, mode in enumerate(MODES):
+    for i, mode in enumerate(active_modes):
         y = top + 36 + i * 38
         parts.append(f'<rect x="{legend_x}" y="{y-22}" width="24" height="24" fill="{COLORS[mode]}"/>')
         parts.append(f'<text x="{legend_x+34}" y="{y}" font-family="Arial" font-size="22">{LABELS[mode]}</text>')
@@ -344,9 +359,9 @@ def write_svg_plot(records, x_key, y_key, title, xlabel, ylabel, output_path, li
         f.write("\n".join(parts))
 
 
-def fallback_svg(summary_csv, output_dir):
+def fallback_svg(summary_csvs, output_dir):
     ensure_dirs(output_dir)
-    rows = read_rows(summary_csv)
+    rows = read_rows(summary_csvs)
 
     layout = []
     for row in rows:
@@ -427,16 +442,22 @@ def fallback_svg(summary_csv, output_dir):
 
 def main():
     parser = argparse.ArgumentParser(description="Plot focused access-path experiment results.")
-    parser.add_argument("--summary-csv", default="experiments/results/explain_metrics_summary.csv")
+    parser.add_argument(
+        "--summary-csv",
+        action="append",
+        default=None,
+        help="Summary CSV to plot. Repeat to combine old zonemap/sketch results with new RABIT results.",
+    )
     parser.add_argument("--output-dir", default="plots")
     args = parser.parse_args()
+    summary_csvs = args.summary_csv or ["experiments/results/explain_metrics_summary.csv"]
 
     try:
-        try_pandas_matplotlib(args.summary_csv, args.output_dir)
+        try_pandas_matplotlib(summary_csvs, args.output_dir)
         print("Wrote PNG plots with pandas/matplotlib to %s" % args.output_dir)
     except ImportError as exc:
         print("pandas/matplotlib unavailable (%s); writing SVG fallback plots" % exc)
-        fallback_svg(args.summary_csv, args.output_dir)
+        fallback_svg(summary_csvs, args.output_dir)
         print("Wrote SVG plots to %s" % args.output_dir)
 
 

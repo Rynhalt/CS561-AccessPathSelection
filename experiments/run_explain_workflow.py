@@ -32,14 +32,9 @@ SUITES = {
 
 
 DEFAULT_MODES = [
-    "full",
-    "zonemap_only",
-    "segment_zonemap_only",
-    "sketch_only",
-    "none",
-    "rowgroup_only",
     "rowgroup_plus_segment_zonemap",
     "rowgroup_plus_sketch",
+    "rowgroup_plus_rabit",
 ]
 
 
@@ -49,12 +44,14 @@ PER_RUN_FIELDNAMES = [
     "disable_zonemap",
     "disable_segment_zonemap",
     "disable_sketch",
+    "disable_rabit",
     "mode",
     "run",
     "total_time_s",
     "row_groups_pruned_by_zonemap",
     "segments_pruned_by_zonemap",
     "segments_pruned_by_sketch",
+    "segments_pruned_by_rabit",
     "vectors_processed",
 ]
 
@@ -66,11 +63,13 @@ SUMMARY_FIELDNAMES = [
     "disable_zonemap",
     "disable_segment_zonemap",
     "disable_sketch",
+    "disable_rabit",
     "runs",
     "avg_total_time_s",
     "avg_row_groups_pruned_by_zonemap",
     "avg_segments_pruned_by_zonemap",
     "avg_segments_pruned_by_sketch",
+    "avg_segments_pruned_by_rabit",
     "avg_vectors_processed",
 ]
 
@@ -180,6 +179,7 @@ def compute_averages(rows):
             row["disable_zonemap"],
             row["disable_segment_zonemap"],
             row["disable_sketch"],
+            row["disable_rabit"],
         )
         grouped[key].append(row)
 
@@ -189,10 +189,11 @@ def compute_averages(rows):
         "row_groups_pruned_by_zonemap",
         "segments_pruned_by_zonemap",
         "segments_pruned_by_sketch",
+        "segments_pruned_by_rabit",
         "vectors_processed",
     ]
     for key, group_rows in sorted(grouped.items()):
-        suite, query_name, mode, disable_zonemap, disable_segment_zonemap, disable_sketch = key
+        suite, query_name, mode, disable_zonemap, disable_segment_zonemap, disable_sketch, disable_rabit = key
         average_row = {
             "suite": suite,
             "query_name": query_name,
@@ -200,6 +201,7 @@ def compute_averages(rows):
             "disable_zonemap": disable_zonemap,
             "disable_segment_zonemap": disable_segment_zonemap,
             "disable_sketch": disable_sketch,
+            "disable_rabit": disable_rabit,
             "runs": str(len(group_rows)),
         }
         for field in numeric_fields:
@@ -238,16 +240,7 @@ def parse_args():
     parser.add_argument(
         "--mode",
         action="append",
-        choices=[
-            "full",
-            "zonemap_only",
-            "segment_zonemap_only",
-            "sketch_only",
-            "none",
-            "rowgroup_only",
-            "rowgroup_plus_segment_zonemap",
-            "rowgroup_plus_sketch",
-        ],
+        choices=DEFAULT_MODES,
         help="Flag mode to run. Repeat to run multiple modes. Defaults to all modes.",
     )
     parser.add_argument(

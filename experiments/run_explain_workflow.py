@@ -13,6 +13,7 @@ from tempfile import TemporaryDirectory
 ROOT = Path(__file__).resolve().parents[1]
 SQL_DIR = ROOT / "experiments" / "sql"
 WORKER = ROOT / "experiments" / "run_explain_suite.py"
+PLOTTER = ROOT / "experiments" / "plot_access_path_analysis.py"
 DEFAULT_DUCKDB = ROOT / "build" / "release" / "duckdb"
 THREAD_ENV_VARS = (
     "OMP_NUM_THREADS",
@@ -289,7 +290,51 @@ def parse_args():
         default=1,
         help="DuckDB execution threads to use for each chunk (default: 1)",
     )
+    parser.add_argument(
+        "--plot-output-dir",
+        type=Path,
+        default=ROOT / "plots_with_rabit",
+        help="Directory for generated comparison plots after a successful run (default: plots_with_rabit)",
+    )
+    parser.add_argument(
+        "--skip-plots",
+        action="store_true",
+        help="Do not generate plots after writing the final summary CSV.",
+    )
     return parser.parse_args()
+
+
+def generate_plots(summary_output, plot_output_dir):
+    if not PLOTTER.exists():
+        print(f"Plot script not found: {PLOTTER}; skipping plots", file=sys.stderr)
+        return
+    if not summary_output.exists():
+        print(f"Summary CSV not found: {summary_output}; skipping plots", file=sys.stderr)
+        return
+    proc = subprocess.run(
+        [
+            sys.executable,
+            str(PLOTTER),
+            "--summary-csv",
+            str(summary_output),
+            "--output-dir",
+            str(plot_output_dir),
+        ],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        universal_newlines=True,
+        check=False,
+    )
+    if proc.returncode != 0:
+        raise RuntimeError(
+            f"Plot generation failed with exit code {proc.returncode}\n"
+            f"--- STDOUT ---\n{proc.stdout}\n"
+            f"--- STDERR ---\n{proc.stderr}"
+        )
+    if proc.stdout:
+        print(proc.stdout.strip())
+    if proc.stderr:
+        print(proc.stderr.strip(), file=sys.stderr)
 
 
 def main():
@@ -449,6 +494,8 @@ def main():
     print(f"Wrote {len(summary_rows)} summary rows to {args.summary_output}")
     if failure_rows:
         print(f"Wrote {len(failure_rows)} failed chunks to {args.failure_output}")
+    if not args.skip_plots:
+        generate_plots(args.summary_output, args.plot_output_dir)
     return 0
 
 

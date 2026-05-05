@@ -1,2 +1,0 @@
-suite,query_name,disable_zonemap,disable_segment_zonemap,disable_sketch,disable_rabit,mode,run,total_time_s,row_groups_pruned_by_zonemap,segments_pruned_by_zonemap,segments_pruned_by_sketch,segments_pruned_by_rabit,vectors_processed
-layout_selectivity,random_5_pct,false,true,true,false,rowgroup_plus_rabit,1,0.0681,0,0,0,0,4883

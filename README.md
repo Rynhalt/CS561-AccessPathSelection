@@ -91,7 +91,7 @@ python3 experiments/plot_access_path_analysis.py \
 
 ## Useful Workflow Options
 
-The experiment can take quite a while to complete, so in the event it crashes in the middle, you can restart the experiment and resume from already completed suites, using:
+The experiment can take quite a while to complete, so in the event it crashes in the middle, you can restart the experiment and resume from already completed experiments using:
 
 ```bash
 python3 experiments/run_explain_workflow.py --skip-completed-suites

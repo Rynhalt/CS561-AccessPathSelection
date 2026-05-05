@@ -127,24 +127,3 @@ Use a non-default DuckDB binary:
 ```bash
 python3 experiments/run_explain_workflow.py --duckdb /path/to/duckdb
 ```
-
-## Output Files to Commit
-
-Commit the final result summaries and final plots:
-
-```text
-experiments/results/explain_metrics_runs*.csv
-experiments/results/explain_metrics_summary*.csv
-plots_with_rabit/
-```
-
-Do not commit chunk directories, smoke-test outputs, or local Markdown report
-drafts; these are ignored by `.gitignore`.
-
----
-
-For a clean reproduction, compile on an AVX-512 node, then run only:
-
-```bash
-python3 experiments/run_explain_workflow.py
-```

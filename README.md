@@ -26,7 +26,7 @@ From the repository root:
 ```bash
 make release
 ```
-
+This can take anywhere from 15-30 minutes.
 This should produce:
 
 ```text

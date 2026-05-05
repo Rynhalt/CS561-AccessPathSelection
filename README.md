@@ -35,11 +35,6 @@ only the segment-level pruning method used after a row group survives.
 Column sketches use AVX-512 code paths. On BU SCC, request an AVX-512-capable
 node before compiling/running experiment by adding flag, "-l avx512" in the fiel "Extra qsub options:"
 
-
-For batch jobs, include the same resource request in the job submission, e.g.
-`-l avx512`. Also request enough slots if you run anything multi-threaded. The
-experiment scripts default DuckDB to one thread.
-
 ### 2. Compile DuckDB
 
 From the repository root:

@@ -35,7 +35,7 @@ build/release/duckdb
 
 ### 3. Run the full workflow
 
-After the binary exists, run:
+After confirming the binary exists, run:
 
 ```bash
 python3 experiments/run_explain_workflow.py
@@ -48,6 +48,7 @@ By default this runs:
 - 10 repetitions per query/mode
 - one DuckDB thread
 
+The full experiment can take quite a while (2~3+ hours)
 The workflow writes final CSVs to:
 
 ```text

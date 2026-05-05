@@ -12,22 +12,6 @@ The final experiments compare three scan modes:
 In all three modes, row-group zonemap pruning remains enabled. The mode changes
 only the segment-level pruning method used after a row group survives.
 
-## Important Code Paths
-
-- `src/storage/table/row_group.cpp`
-  - scan-time access-path selection
-  - row-group zonemap, segment zonemap, sketch, and RABIT pruning hooks
-- `src/include/duckdb/storage/statistics/column_sketch.hpp`
-  - column sketch implementation
-- `src/include/duckdb/storage/statistics/rabit_index.hpp`
-  - RABIT-inspired Group Encoding metadata
-- `src/storage/statistics/rabit_index.cpp`
-  - RABIT GE range checks over sparse point vectors and dense cumulative groups
-- `experiments/run_explain_workflow.py`
-  - top-level experiment runner
-- `experiments/plot_access_path_analysis.py`
-  - plot generation from experiment summaries
-
 ## Running Experiments
 
 ### 1. Request an AVX-512 SCC node
@@ -127,3 +111,20 @@ Use a non-default DuckDB binary:
 ```bash
 python3 experiments/run_explain_workflow.py --duckdb /path/to/duckdb
 ```
+
+
+## Important Code Paths
+
+- `src/storage/table/row_group.cpp`
+  - scan-time access-path selection
+  - row-group zonemap, segment zonemap, sketch, and RABIT pruning hooks
+- `src/include/duckdb/storage/statistics/column_sketch.hpp`
+  - column sketch implementation
+- `src/include/duckdb/storage/statistics/rabit_index.hpp`
+  - RABIT-inspired Group Encoding metadata
+- `src/storage/statistics/rabit_index.cpp`
+  - RABIT GE range checks over sparse point vectors and dense cumulative groups
+- `experiments/run_explain_workflow.py`
+  - top-level experiment runner
+- `experiments/plot_access_path_analysis.py`
+  - plot generation from experiment summaries

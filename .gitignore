@@ -241,6 +241,8 @@ rabit*.md
 RABIT*.md
 experiments/*rabit*.md
 experiments/*RABIT*.md
+experiments/ACCESS_PATH_EXPERIMENT_ANALYSIS_REPORT.md
+experiments/EXPERIMENT_DESIGN_AND_ANALYSIS.md
 final_report*.md
 final_report*/
 final-report*/

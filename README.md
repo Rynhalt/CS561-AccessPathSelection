@@ -1,42 +1,158 @@
-### About this project
+# Access Path Selection in Modern Columnar DBMSs
 
-This project contains a framework for students to quickly configure and evaluate access path selection strategies in DuckDB, a vectorized push-based columnar DBMS. 
+This repository contains a modified DuckDB engine for a CS561 final project on
+access path selection in a vectorized columnar DBMS.
 
-The code repos includes a sophisticated implementation developed by the TAs, allowing students to benchmark it against native zone maps and bitmap indexing quickly.
+The final experiments compare three scan modes:
 
-### Walk through the code
+- `rowgroup_plus_segment_zonemap`
+- `rowgroup_plus_sketch`
+- `rowgroup_plus_rabit`
 
-Please read the following code snippets to see how the framework operates.
+In all three modes, row-group zonemap pruning remains enabled. The mode changes
+only the segment-level pruning method used after a row group survives.
 
-- src/include/duckdb/storage/statistics/column_sketch.hpp contains the core Column Sketches implementation. Our implementation leverages AVX-512 acceleration and requires a modern Intel or AMD CPU with AVX-512 support.
+## Important Code Paths
 
-- planner/filter/*_filter.cpp:CheckSketchStatistics() implements the logic for data skipping based on sketches of column data. Note that the neighboring CheckStatistics() function handles the equivalent logic for the native zone maps.
+- `src/storage/table/row_group.cpp`
+  - scan-time access-path selection
+  - row-group zonemap, segment zonemap, sketch, and RABIT pruning hooks
+- `src/include/duckdb/storage/statistics/column_sketch.hpp`
+  - column sketch implementation
+- `src/include/duckdb/storage/statistics/rabit_index.hpp`
+  - RABIT-inspired Group Encoding metadata
+- `src/storage/statistics/rabit_index.cpp`
+  - RABIT GE range checks over sparse point vectors and dense cumulative groups
+- `experiments/run_explain_workflow.py`
+  - top-level experiment runner
+- `experiments/plot_access_path_analysis.py`
+  - plot generation from experiment summaries
 
-- storage/statistics/numeric_stats.cpp:CheckSketchTemplated() defines how column sketches are evaluated against specific predicates. E.g., "A = x" and  "A <= x".
+## Running Experiments
 
-### Run the code
+### 1. Request an AVX-512 SCC node
 
-First, compile the project.
+Column sketches use AVX-512 code paths. On BU SCC, request an AVX-512-capable
+node before compiling/running experiments. For example:
 
-```sh
-make release (or debug)
+```bash
+qrsh -l avx512
 ```
 
-Second, generate workloads and column sketches for columns involved in TPC-H Q6. This step takes a few minutes, (mainly) depending on your CPU HZ number.
+For batch jobs, include the same resource request in the job submission, e.g.
+`-l avx512`. Also request enough slots if you run anything multi-threaded. The
+experiment scripts default DuckDB to one thread.
 
-```duckdb
-set threads to 1;
-call dbgen(sf=10);
+### 2. Compile DuckDB
+
+From the repository root:
+
+```bash
+make release
 ```
 
-Run the TPC-H Q6 using column sketches.
+This should produce:
 
-```duckdb
-pragma tpch(6);
+```text
+build/release/duckdb
 ```
 
-Note that the above `dbgen` command generates column sketches for columns involved in TPC-H Q6 automatically. If you want to building sketches for other query columns, you can update src/storage/local_storage.cpp:LocalStorage::Append().
+### 3. Run the full workflow
+
+After the binary exists, run:
+
+```bash
+python3 experiments/run_explain_workflow.py
+```
+
+By default this runs:
+
+- all SQL workload suites in `experiments/sql/`
+- all three final modes
+- 10 repetitions per query/mode
+- one DuckDB thread
+
+The workflow writes final CSVs to:
+
+```text
+experiments/results/explain_metrics_runs.csv
+experiments/results/explain_metrics_summary.csv
+```
+
+It also writes per-suite CSVs such as:
+
+```text
+experiments/results/explain_metrics_runs_layout_selectivity.csv
+experiments/results/explain_metrics_summary_layout_selectivity.csv
+```
+
+Generated per-query chunk files are scratch outputs and are ignored by Git.
+
+### 4. Generate plots
+
+The workflow generates plots automatically after a successful run:
+
+```text
+plots_with_rabit/
+```
+
+To skip plot generation:
+
+```bash
+python3 experiments/run_explain_workflow.py --skip-plots
+```
+
+To regenerate plots from an existing summary CSV:
+
+```bash
+python3 experiments/plot_access_path_analysis.py \
+  --summary-csv experiments/results/explain_metrics_summary.csv \
+  --output-dir plots_with_rabit
+```
+
+## Useful Workflow Options
+
+Resume from already completed suites:
+
+```bash
+python3 experiments/run_explain_workflow.py --skip-completed-suites
+```
+
+Run only one suite:
+
+```bash
+python3 experiments/run_explain_workflow.py --suite layout_selectivity
+```
+
+Run only one mode:
+
+```bash
+python3 experiments/run_explain_workflow.py --mode rowgroup_plus_rabit
+```
+
+Use a non-default DuckDB binary:
+
+```bash
+python3 experiments/run_explain_workflow.py --duckdb /path/to/duckdb
+```
+
+## Output Files to Commit
+
+Commit the final result summaries and final plots:
+
+```text
+experiments/results/explain_metrics_runs*.csv
+experiments/results/explain_metrics_summary*.csv
+plots_with_rabit/
+```
+
+Do not commit chunk directories, smoke-test outputs, or local Markdown report
+drafts; these are ignored by `.gitignore`.
 
 ---
 
-Happy coding! If you have any questions, please feel free to contact the TAs.
+For a clean reproduction, compile on an AVX-512 node, then run only:
+
+```bash
+python3 experiments/run_explain_workflow.py
+```

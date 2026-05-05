@@ -48,7 +48,8 @@ By default this runs:
 - 10 repetitions per query/mode
 - one DuckDB thread
 
-The full experiment can take quite a while (2~3+ hours)
+**The full experiment can take quite a while (2~3+ hours).**
+
 The workflow writes final CSVs to:
 
 ```text

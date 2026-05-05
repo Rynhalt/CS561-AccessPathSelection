@@ -49,7 +49,7 @@ By default this runs:
 - one DuckDB thread
 
 
-⚠️ **The full experiment can take quite a while (2~3+ hours)**
+⚠️ **The full experiment can take quite a while (2~3+ hours, sometimes it takes 5+ hours... I apologize to anyone trying to reproduce the experiment)**
 
 The workflow writes final CSVs to:
 
